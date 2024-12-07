@@ -118,3 +118,126 @@ pub mod financial {
 		Cash
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use crate::classes::financial::*;
+	use chrono::prelude::*;
+
+	#[test]
+	fn correct_party() {
+		let t1 = Transaction::Expense {
+			value: 200.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 1),
+			category: "Utilities".to_string(),
+			subcategory: "Electricity".to_string(),
+			description: "Monthly electricity bill".to_string(),
+			entity_id: 1,
+		};
+
+		let t2 = Transaction::Expense {
+			value: 100.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 1),
+			category: "Utilities".to_string(),
+			subcategory: "Gas".to_string(),
+			description: "Monthly gas bill".to_string(),
+			entity_id: 1,
+		};
+
+		let t3 = Transaction::Debit {
+			value: 300.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 2),
+			account_id: 42,
+		};
+
+		// Example data
+		let items = vec![t1, t2, t3];
+
+		let party: Party = Party {
+			transactions: items,
+			id: 4
+		};
+
+		assert!(party.is_valid());
+	}
+
+	#[test]
+	fn incorrect_party() {
+		let t1 = Transaction::Expense {
+			value: 102.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 1),
+			category: "Utilities".to_string(),
+			subcategory: "Electricity".to_string(),
+			description: "Monthly electricity bill".to_string(),
+			entity_id: 1,
+		};
+
+		let t2 = Transaction::Debit {
+			value: 120.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 2),
+			account_id: 42,
+		};
+
+		// Example data
+		let items = vec![t1, t2];
+
+		let party: Party = Party {
+			transactions: items,
+			id: 4
+		};
+
+		assert!(!party.is_valid());
+	}
+
+	#[test]
+	fn multicurrency_party() {
+		let t1 = Transaction::Earning {
+			value: 120.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 1),
+			category: "Salary".to_string(),
+			subcategory: "Regular salary".to_string(),
+			description: "Finally got the bread".to_string(),
+			entity_id: 1,
+		};
+
+		let t2 = Transaction::Expense {
+			value: 100.0,
+			currency: Currency::SEK,
+			date: NaiveDate::from_ymd(2024, 12, 1),
+			category: "Drugs".to_string(),
+			subcategory: "Alcohol".to_string(),
+			description: "Bought some beers to celebrate".to_string(),
+			entity_id: 11,
+		};
+
+		let t3 = Transaction::Credit {
+			value: 120.0,
+			currency: Currency::EUR,
+			date: NaiveDate::from_ymd(2024, 12, 2),
+			account_id: 2,
+		};
+
+		let t4 = Transaction::Debit {
+			value: 100.0,
+			currency: Currency::SEK,
+			date: NaiveDate::from_ymd(2024, 12, 2),
+			account_id: 42,
+		};
+
+		// Example data
+		let items = vec![t1, t2, t3, t4];
+
+		let party: Party = Party {
+			transactions: items,
+			id: 4
+		};
+
+		assert!(party.is_valid());
+	}
+}
