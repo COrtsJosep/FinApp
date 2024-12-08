@@ -1,6 +1,7 @@
 pub mod financial {
 	use chrono::prelude::*;
 	use std::collections::HashMap;
+	use std::fmt::Display;
 
 	/// A party is a balanced set of accounting transactions that happened together and that are
 	/// related to each other.
@@ -30,7 +31,6 @@ pub mod financial {
 				aggregates.entry(currency).and_modify(|aggregate: &mut f32| *aggregate += value).or_insert(value);
 			}
 
-			println!("Balance: {:?}", aggregates);
 			for (key, val) in aggregates.iter() {
 				if (*val).abs() >= 0.01 {return false} // one or more cents off
 			}
@@ -109,6 +109,18 @@ pub mod financial {
 		EUR,
 		CHF,
 		SEK
+	}
+
+	// Conversion to string
+	impl Display for Currency {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			let str = match self {
+				Currency::EUR => "EUR".to_string(),
+				Currency::CHF => "CHF".to_string(),
+				Currency::SEK => "SEK".to_string()
+			};
+			write!(f, "{}", str)
+		}
 	}
 
 	/// Entity to which the expense is paid or, alternatively, that hands in the income.
