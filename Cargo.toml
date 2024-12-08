@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.38"
+polars = { version = "0.45.0", features = ["lazy", "temporal"]}
