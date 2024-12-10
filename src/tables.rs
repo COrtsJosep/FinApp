@@ -264,7 +264,34 @@ mod tests {
     }
 
     #[test]
-    fn correct_funds_table_addition() {
+    fn correct_funds_table_init() {
+        let funds_table: FundsTable = FundsTable::new();
+
+        assert!(funds_table.data_frame.is_empty());
+    }
+
+    #[test]
+    fn correct_id_empty_funds_table_init() {
+        let mut funds_table: FundsTable = FundsTable::new();
+
+        let record = Transaction::Debit {
+            value: 300.0,
+            currency: Currency::EUR,
+            date: NaiveDate::from_ymd(2024, 12, 2),
+            account_id: 0u32,
+        };
+
+        funds_table.add_record(&record);
+
+        let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
+        let actual_last_id = binding.value();
+        let expected_last_id = AnyValue::UInt32(0u32);
+
+        assert_eq!(actual_last_id, &expected_last_id)
+    }
+
+    #[test]
+    fn correct_id_nonempty_funds_table_addition() {
         let mut funds_table: FundsTable = init_funds_table();
         let record = Transaction::Debit {
             value: 300.0,
@@ -272,12 +299,18 @@ mod tests {
             date: NaiveDate::from_ymd(2024, 12, 2),
             account_id: 0u32,
         };
-        funds_table.display();
 
         funds_table.add_record(&record);
 
-        funds_table.display();
-        assert!(true)
+        let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
+        let actual_last_id = binding.value();
+        let expected_last_id = AnyValue::UInt32(2u32);
+
+        assert_eq!(actual_last_id, &expected_last_id)
     }
+
+
+
+
 }
 
