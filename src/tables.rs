@@ -1,7 +1,7 @@
 pub mod tables {
-    use chrono::NaiveDate;
+    use chrono::{Local, NaiveDate};
     use polars::prelude::*;
-    use crate::classes::financial::{Transaction};
+    use crate::classes::financial::{Party, Transaction, Entity};
 
     pub struct EarningsTable {
         pub data_frame: DataFrame
@@ -233,10 +233,122 @@ pub mod tables {
         }
     }
 
+    pub struct PartyTable {
+        pub data_frame: DataFrame
+    }
+
+    impl PartyTable {
+        pub fn new() -> PartyTable {
+            let data_frame = DataFrame::new(vec![
+                Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<u32>::new())),
+                Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
+            ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+
+            Self { data_frame }
+        }
+
+        pub fn load() -> PartyTable {
+            let data_frame = CsvReadOptions::default()
+                .with_infer_schema_length(None)
+                .with_has_header(true)
+                .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
+                .try_into_reader_with_file_path(Some("path/file.csv".into()))
+                .expect("Failed to read party table") // considered unsafe. refactor?
+                .finish()
+                .expect("Failed to load party table");
+
+            Self { data_frame }
+        }
+
+        pub fn get_last_party_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("party_id").expect("Failed to find party_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
+        pub fn add_record(&mut self, party: &Party) -> () {
+            let party_id: u32 = self.get_last_party_id();
+
+            let record = df!(
+                "party_id" => [party_id],
+                "creation_date" => [party.creation_date]
+            ).expect("Failed to create party record");
+
+            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert party record")
+        }
+
+        pub fn display(&self) {
+            println!("{}", self.data_frame);
+        }
+    }
+
+    pub struct EntityTable {
+        pub data_frame: DataFrame
+    }
+
+    impl EntityTable {
+        pub fn new() -> EntityTable {
+            let data_frame = DataFrame::new(vec![
+                Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
+                Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("entity_type"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("entity_subtype"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
+            ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+
+            Self { data_frame }
+        }
+
+        pub fn load() -> EntityTable {
+            let data_frame = CsvReadOptions::default()
+                .with_infer_schema_length(None)
+                .with_has_header(true)
+                .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
+                .try_into_reader_with_file_path(Some("path/file.csv".into()))
+                .expect("Failed to read entity table") // considered unsafe. refactor?
+                .finish()
+                .expect("Failed to load entity table");
+
+            Self { data_frame }
+        }
+
+        fn get_last_entity_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("entity_id").expect("Failed to find entity_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
+        pub fn add_record(&mut self, entity: &Entity) -> () {
+            let entity_id: u32 = self.get_last_entity_id();
+
+            let record = df!(
+                "entity_id" => [entity_id],
+                "name" => [entity.get_name()],
+                "country" => [entity.get_country()],
+                "entity_type" => [entity.get_entity_type().to_string()],
+                "entity_subtype" => [entity.get_entity_subtype()],
+                "creation_date" => [Local::now().date_naive()]
+            ).expect("Failed to create entity record");
+
+            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert entity record")
+        }
+
+        pub fn display(&self) {
+            println!("{}", self.data_frame);
+        }
+    }
+
     pub struct DataBase {
         earnings_table: EarningsTable,
         expenses_table: ExpensesTable,
-        funds_table: FundsTable
+        funds_table: FundsTable,
+        party_table: PartyTable,
+        entity_table: EntityTable
     }
 }
 
@@ -274,14 +386,14 @@ mod tests {
     fn correct_id_empty_funds_table_init() {
         let mut funds_table: FundsTable = FundsTable::new();
 
-        let record = Transaction::Debit {
+        let transaction = Transaction::Debit {
             value: 300.0,
             currency: Currency::EUR,
             date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
             account_id: 0u32,
         };
 
-        funds_table.add_record(&record);
+        funds_table.add_record(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -293,14 +405,14 @@ mod tests {
     #[test]
     fn correct_id_nonempty_funds_table_addition() {
         let mut funds_table: FundsTable = init_funds_table();
-        let record = Transaction::Debit {
+        let transaction = Transaction::Debit {
             value: 300.0,
             currency: Currency::EUR,
             date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
             account_id: 0u32,
         };
 
-        funds_table.add_record(&record);
+        funds_table.add_record(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -309,8 +421,31 @@ mod tests {
         assert_eq!(actual_last_id, &expected_last_id)
     }
 
+    #[test]
+    fn correct_entity_table_init() {
+        let entity_table: EntityTable = EntityTable::new();
 
+        assert!(entity_table.data_frame.is_empty());
+    }
 
+    #[test]
+    fn correct_id_empty_entity_table_init() {
+        let mut entity_table: EntityTable = EntityTable::new();
 
+        let entity = Entity::new(
+            String::from("Aldi"),
+            String::from("Germany"),
+            EntityType::Firm,
+            String::from("Supermarket"),
+        );
+
+        entity_table.add_record(&entity);
+
+        let binding = entity_table.data_frame.column("entity_id").unwrap().max_reduce().unwrap();
+        let actual_last_id = binding.value();
+        let expected_last_id = AnyValue::UInt32(0u32);
+
+        assert_eq!(actual_last_id, &expected_last_id)
+    }
 }
 

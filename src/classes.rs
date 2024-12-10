@@ -137,16 +137,34 @@ pub mod financial {
 	}
 
 	/// Entity to which the expense is paid or, alternatively, that hands in the income.
-	struct Entity {
+	pub struct Entity {
 		name: String,
 		country: String,
-		id: u32,
 		entity_type: EntityType,
-		subtype: String //supermarket, pharmacy, ... (?)
+		entity_subtype: String //supermarket, pharmacy, ... (?)
+	}
+
+	impl Entity {
+		pub(crate) fn get_name(&self) -> String { self.name.to_string() }
+		pub(crate) fn get_country(&self) -> String { self.country.to_string() }
+		pub (crate) fn get_entity_type(&self) -> &EntityType { &self.entity_type }
+		pub (crate) fn get_entity_subtype(&self) -> String { self.entity_subtype.to_string() }
+
+		pub fn new(name: String,
+				   country: String,
+				   entity_type: EntityType,
+				   entity_subtype: String) -> Self {
+			Self {
+				name,
+				country,
+				entity_type,
+				entity_subtype,
+			}
+		}
 	}
 
 	/// Account where funds are stored.
-	struct Account {
+	pub struct Account {
 		name: String,
 		country: String,
 		id: u32,
@@ -159,6 +177,19 @@ pub mod financial {
 		Human,
 		State,
 		NGO
+	}
+
+	/// Conversion to string
+	impl Display for EntityType {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			let str = match self {
+				EntityType::Firm { .. } => "Firm".to_string(),
+				EntityType::Human { .. } => "Human".to_string(),
+				EntityType::State { .. } => "State".to_string(),
+				EntityType::NGO { .. } => "NGO".to_string()
+			};
+			write!(f, "{}", str)
+		}
 	}
 
 	pub enum AccountType {
