@@ -1,7 +1,7 @@
 pub mod tables {
     use chrono::{Local, NaiveDate};
     use polars::prelude::*;
-    use crate::classes::financial::{Party, Transaction, Entity};
+    use crate::classes::financial::{Party, Transaction, Entity, Account};
 
     pub struct EarningsTable {
         pub data_frame: DataFrame
@@ -342,13 +342,75 @@ pub mod tables {
             println!("{}", self.data_frame);
         }
     }
+    pub struct AccountTable {
+        pub data_frame: DataFrame
+    }
+
+    impl AccountTable {
+        pub fn new() -> AccountTable {
+            let data_frame = DataFrame::new(vec![
+                Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<u32>::new())),
+                Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("account_type"), Vec::<String>::new())),
+                Column::from(Series::new(PlSmallStr::from("initial_balance"), Vec::<f32>::new())),
+                Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
+            ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+
+            Self { data_frame }
+        }
+
+        pub fn load() -> AccountTable {
+            let data_frame = CsvReadOptions::default()
+                .with_infer_schema_length(None)
+                .with_has_header(true)
+                .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
+                .try_into_reader_with_file_path(Some("path/file.csv".into()))
+                .expect("Failed to read account table") // considered unsafe. refactor?
+                .finish()
+                .expect("Failed to load account table");
+
+            Self { data_frame }
+        }
+
+        fn get_last_account_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("account_id").expect("Failed to find account_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
+        pub fn add_record(&mut self, account: &Account) -> () {
+            let account_id: u32 = self.get_last_account_id();
+
+            let record = df!(
+                "account_id" => [account_id],
+                "name" => [account.get_name()],
+                "country" => [account.get_country()],
+                "currency" => [account.get_currency().to_string()],
+                "account_type" => [account.get_account_type().to_string()],
+                "initial_balance" => [account.get_initial_balance()],
+                "creation_date" => [Local::now().date_naive()]
+            ).expect("Failed to create entity record");
+
+            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert account record")
+        }
+
+        pub fn display(&self) {
+            println!("{}", self.data_frame);
+        }
+    }
+
 
     pub struct DataBase {
         earnings_table: EarningsTable,
         expenses_table: ExpensesTable,
         funds_table: FundsTable,
         party_table: PartyTable,
-        entity_table: EntityTable
+        entity_table: EntityTable,
+        account_table: AccountTable
     }
 }
 
@@ -442,6 +504,27 @@ mod tests {
         entity_table.add_record(&entity);
 
         let binding = entity_table.data_frame.column("entity_id").unwrap().max_reduce().unwrap();
+        let actual_last_id = binding.value();
+        let expected_last_id = AnyValue::UInt32(0u32);
+
+        assert_eq!(actual_last_id, &expected_last_id)
+    }
+
+    #[test]
+    fn correct_id_empty_account_table_init() {
+        let mut account_table: AccountTable = AccountTable::new();
+
+        let account = Account::new(
+            String::from("Current account"),
+            String::from("Credit Suisse"),
+            Currency::CHF,
+            AccountType::Deposit,
+            1080.0f32,
+        );
+
+        account_table.add_record(&account);
+
+        let binding = account_table.data_frame.column("account_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
         let expected_last_id = AnyValue::UInt32(0u32);
 

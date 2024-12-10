@@ -167,9 +167,31 @@ pub mod financial {
 	pub struct Account {
 		name: String,
 		country: String,
-		id: u32,
+		currency: Currency,
 		account_type: AccountType,
 		initial_balance: f32
+	}
+
+	impl Account {
+		pub(crate) fn get_name(&self) -> String { self.name.to_string() }
+		pub(crate) fn get_country(&self) -> String { self.country.to_string() }
+		pub(crate) fn get_currency(&self) -> &Currency { &self.currency }
+		pub (crate) fn get_account_type(&self) -> &AccountType { &self.account_type }
+		pub (crate) fn get_initial_balance(&self) -> f32 { self.initial_balance }
+
+		pub fn new(name: String,
+				   country: String,
+				   currency: Currency,
+				   account_type: AccountType,
+				   initial_balance: f32) -> Self {
+			Self {
+				name,
+				country,
+				currency,
+				account_type,
+				initial_balance,
+			}
+		}
 	}
 
 	pub enum EntityType {
@@ -196,6 +218,18 @@ pub mod financial {
 		Deposit,
 		Investment,
 		Cash
+	}
+
+	/// Conversion to string
+	impl Display for AccountType {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			let str = match self {
+				AccountType::Deposit { .. } => "Deposit".to_string(),
+				AccountType::Investment { .. } => "Investment".to_string(),
+				AccountType::Cash { .. } => "Cash".to_string()
+			};
+			write!(f, "{}", str)
+		}
 	}
 }
 
