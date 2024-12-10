@@ -10,7 +10,7 @@ pub mod financial {
 	/// touch to the code.
 	pub struct Party {
 		pub transactions: Vec<Transaction>,
-		pub id: u32
+		pub creation_date: NaiveDate
 	}
 
 	impl Party {
@@ -31,7 +31,7 @@ pub mod financial {
 				aggregates.entry(currency).and_modify(|aggregate: &mut f32| *aggregate += value).or_insert(value);
 			}
 
-			for (key, val) in aggregates.iter() {
+			for (_, val) in aggregates.iter() {
 				if (*val).abs() >= 0.01 {return false} // one or more cents off
 			}
 
@@ -103,6 +103,19 @@ pub mod financial {
 		}
 	}
 
+	/// Conversion to string
+	impl Display for Transaction {
+		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+			let str = match self {
+				Transaction::Earning { .. } => "Earning".to_string(),
+				Transaction::Expense { .. } => "Expense".to_string(),
+				Transaction::Credit { .. } => "Credit".to_string(),
+				Transaction::Debit { .. } => "Debit".to_string()
+			};
+			write!(f, "{}", str)
+		}
+	}
+
 
 	#[derive(Debug, Hash, PartialEq, Eq)]
 	pub enum Currency {
@@ -165,7 +178,7 @@ mod tests {
 		let t1 = Transaction::Expense {
 			value: 200.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 1),
+			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 			category: "Utilities".to_string(),
 			subcategory: "Electricity".to_string(),
 			description: "Monthly electricity bill".to_string(),
@@ -175,7 +188,7 @@ mod tests {
 		let t2 = Transaction::Expense {
 			value: 100.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 1),
+			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 			category: "Utilities".to_string(),
 			subcategory: "Gas".to_string(),
 			description: "Monthly gas bill".to_string(),
@@ -185,7 +198,7 @@ mod tests {
 		let t3 = Transaction::Debit {
 			value: 300.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 2),
+			date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
 			account_id: 42,
 		};
 
@@ -194,7 +207,7 @@ mod tests {
 
 		let party: Party = Party {
 			transactions: items,
-			id: 4
+			creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()
 		};
 
 		assert!(party.is_valid());
@@ -205,7 +218,7 @@ mod tests {
 		let t1 = Transaction::Expense {
 			value: 102.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 1),
+			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 			category: "Utilities".to_string(),
 			subcategory: "Electricity".to_string(),
 			description: "Monthly electricity bill".to_string(),
@@ -215,7 +228,7 @@ mod tests {
 		let t2 = Transaction::Debit {
 			value: 120.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 2),
+			date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
 			account_id: 42,
 		};
 
@@ -224,7 +237,7 @@ mod tests {
 
 		let party: Party = Party {
 			transactions: items,
-			id: 4
+			creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 		};
 
 		assert!(!party.is_valid());
@@ -235,7 +248,7 @@ mod tests {
 		let t1 = Transaction::Earning {
 			value: 120.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 1),
+			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 			category: "Salary".to_string(),
 			subcategory: "Regular salary".to_string(),
 			description: "Finally got the bread".to_string(),
@@ -245,7 +258,7 @@ mod tests {
 		let t2 = Transaction::Expense {
 			value: 100.0,
 			currency: Currency::SEK,
-			date: NaiveDate::from_ymd(2024, 12, 1),
+			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
 			category: "Drugs".to_string(),
 			subcategory: "Alcohol".to_string(),
 			description: "Bought some beers to celebrate".to_string(),
@@ -255,14 +268,14 @@ mod tests {
 		let t3 = Transaction::Credit {
 			value: 120.0,
 			currency: Currency::EUR,
-			date: NaiveDate::from_ymd(2024, 12, 2),
+			date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
 			account_id: 2,
 		};
 
 		let t4 = Transaction::Debit {
 			value: 100.0,
 			currency: Currency::SEK,
-			date: NaiveDate::from_ymd(2024, 12, 2),
+			date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
 			account_id: 42,
 		};
 
@@ -271,7 +284,7 @@ mod tests {
 
 		let party: Party = Party {
 			transactions: items,
-			id: 4
+			creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()
 		};
 
 		assert!(party.is_valid());

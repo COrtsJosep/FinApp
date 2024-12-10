@@ -9,7 +9,7 @@ pub mod tables {
 
     impl EarningsTable {
         pub fn new() -> EarningsTable {
-            let mut data_frame = DataFrame::new(vec![
+            let data_frame = DataFrame::new(vec![
                 Column::from(Series::new(PlSmallStr::from("income_id"), Vec::<u32>::new())),
                 Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
                 Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
@@ -83,7 +83,7 @@ pub mod tables {
 
     impl ExpensesTable {
         pub fn new() -> ExpensesTable {
-            let mut data_frame = DataFrame::new(vec![
+            let data_frame = DataFrame::new(vec![
                 Column::from(Series::new(PlSmallStr::from("expense_id"), Vec::<u32>::new())),
                 Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
                 Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
@@ -157,7 +157,7 @@ pub mod tables {
 
     impl FundsTable {
         pub fn new() -> FundsTable {
-            let mut data_frame = DataFrame::new(vec![
+            let data_frame = DataFrame::new(vec![
                 Column::from(Series::new(PlSmallStr::from("fund_movement_id"), Vec::<u32>::new())),
                 Column::from(Series::new(PlSmallStr::from("fund_movement_type"), Vec::<String>::new())),
                 Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
@@ -248,7 +248,7 @@ mod tests {
     use polars::prelude::*;
 
     fn init_funds_table() -> FundsTable {
-        let mut data_frame: DataFrame = df!(
+        let data_frame: DataFrame = df!(
             "fund_movement_id" => [0u32, 1u32],
             "fund_movement_type" => ["Credit", "Debit"],
             "value" => [1309.23f32, -89.0f32],
@@ -277,7 +277,7 @@ mod tests {
         let record = Transaction::Debit {
             value: 300.0,
             currency: Currency::EUR,
-            date: NaiveDate::from_ymd(2024, 12, 2),
+            date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
             account_id: 0u32,
         };
 
@@ -296,7 +296,7 @@ mod tests {
         let record = Transaction::Debit {
             value: 300.0,
             currency: Currency::EUR,
-            date: NaiveDate::from_ymd(2024, 12, 2),
+            date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
             account_id: 0u32,
         };
 
