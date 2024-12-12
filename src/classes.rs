@@ -44,10 +44,10 @@ pub mod financial {
 		}
 	}
 
-	/// Basic entity of the accounting system. Earnings and expenses reflect what event provoked
+	/// Basic entity of the accounting system. Incomes and expenses reflect what event provoked
 	/// the movement, credit and debit record what funds were used.
 	pub enum Transaction {
-		Earning {value: f32,
+		Income {value: f32,
 			currency: Currency,
 			date: NaiveDate,
 			category: String, // salary, interest
@@ -75,7 +75,7 @@ pub mod financial {
 		/// Value getter.
 		fn get_value(&self) -> f32 {
 			match self {
-				Transaction::Earning {..} => 1.0,
+				Transaction::Income {..} => 1.0,
 				Transaction::Expense {..} => -1.0,
 				Transaction::Credit  {..} => -1.0,
 				Transaction::Debit {..} => 1.0,
@@ -85,7 +85,7 @@ pub mod financial {
 		/// Sign getter.
 		fn get_sign(&self) -> f32 {
 			match self {
-				Transaction::Earning { value, .. }
+				Transaction::Income { value, .. }
 				| Transaction::Expense { value, .. }
 				| Transaction::Credit { value, .. }
 				| Transaction::Debit { value, .. } => *value,
@@ -95,7 +95,7 @@ pub mod financial {
 		/// Currency getter.
 		fn get_currency(&self) -> &Currency {
 			match self {
-				Transaction::Earning { currency, .. }
+				Transaction::Income { currency, .. }
 				| Transaction::Expense { currency, .. }
 				| Transaction::Credit { currency, .. }
 				| Transaction::Debit { currency, .. } => currency,
@@ -107,7 +107,7 @@ pub mod financial {
 	impl Display for Transaction {
 		fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
 			let str = match self {
-				Transaction::Earning { .. } => "Earning".to_string(),
+				Transaction::Income { .. } => "Income".to_string(),
 				Transaction::Expense { .. } => "Expense".to_string(),
 				Transaction::Credit { .. } => "Credit".to_string(),
 				Transaction::Debit { .. } => "Debit".to_string()
@@ -310,7 +310,7 @@ mod tests {
 
 	#[test]
 	fn multicurrency_party() {
-		let t1 = Transaction::Earning {
+		let t1 = Transaction::Income {
 			value: 120.0,
 			currency: Currency::EUR,
 			date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),

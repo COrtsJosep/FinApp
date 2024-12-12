@@ -3,12 +3,12 @@ pub mod tables {
     use polars::prelude::*;
     use crate::classes::financial::{Party, Transaction, Entity, Account};
 
-    pub struct EarningsTable {
+    pub struct IncomeTable {
         pub data_frame: DataFrame
     }
 
-    impl EarningsTable {
-        pub fn new() -> EarningsTable {
+    impl IncomeTable {
+        pub fn new() -> IncomeTable {
             let data_frame = DataFrame::new(vec![
                 Column::from(Series::new(PlSmallStr::from("income_id"), Vec::<u32>::new())),
                 Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
@@ -18,26 +18,34 @@ pub mod tables {
                 Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
                 Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
                 Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
-            ]).expect("Failed to initialize empty earnings table"); // considered unsafe. refactor?
+            ]).expect("Failed to initialize empty incomes table"); // considered unsafe. refactor?
 
             Self { data_frame }
         }
 
-        pub fn load() -> EarningsTable {
+        pub fn load() -> IncomeTable {
             let data_frame = CsvReadOptions::default()
                 .with_infer_schema_length(None)
                 .with_has_header(true)
                 .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
                 .try_into_reader_with_file_path(Some("path/file.csv".into()))
-                .expect("Failed to read earnings table") // considered unsafe. refactor?
+                .expect("Failed to read incomes table") // considered unsafe. refactor?
                 .finish()
-                .expect("Failed to load earnings table");
+                .expect("Failed to load incomes table");
 
             Self { data_frame }
         }
 
+        fn get_last_income_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("income_id").expect("Failed to find income_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
         pub fn add_record(&mut self, transaction: &Transaction) -> () {
-            if let Transaction::Earning {
+            if let Transaction::Income {
                 value,
                 currency,
                 date,
@@ -46,13 +54,7 @@ pub mod tables {
                 description,
                 entity_id
             } = transaction {
-                let income_id: u32 = {
-                    if self.data_frame.is_empty() { 0 }
-                    else {
-                        if let AnyValue::UInt32(id) = self.data_frame.column("income_id").expect("Failed to find income_id column").max_reduce().expect("Failed to generate id").value() { id + 1 }
-                        else {panic!("Failed to create an integer id")}
-                    }
-                };
+                let income_id: u32 = self.get_last_income_id();
 
                 let record = df!(
                     "income_id" => [income_id],
@@ -63,11 +65,11 @@ pub mod tables {
                     "subcategory" => [subcategory.to_string()],
                     "description" => [description.to_string()],
                     "entity_id" => [*entity_id],
-                ).expect("Failed to create earning record");
+                ).expect("Failed to create income record");
 
-                self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert earning record")
+                self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert income record")
             } else {
-                panic!("Attempted to insert non-earning into the earnings table");
+                panic!("Attempted to insert non-income into the incomes table");
             }
 
         }
@@ -110,6 +112,14 @@ pub mod tables {
             Self { data_frame }
         }
 
+        fn get_last_expense_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("expense_id").expect("Failed to find expense_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
         pub fn add_record(&mut self, transaction: &Transaction) -> () {
             if let Transaction::Expense {
                 value,
@@ -120,13 +130,7 @@ pub mod tables {
                 description,
                 entity_id
             } = transaction {
-                let expense_id: u32 = {
-                    if self.data_frame.is_empty() { 0 }
-                    else {
-                        if let AnyValue::UInt32(id) = self.data_frame.column("expense_id").expect("Failed to find expense_id column").max_reduce().expect("Failed to generate id").value() { id + 1 }
-                        else {panic!("Failed to create an integer id")}
-                    }
-                };
+                let expense_id: u32 = self.get_last_expense_id();
 
                 let record = df!(
                     "expense_id" => [expense_id],
@@ -182,14 +186,16 @@ pub mod tables {
             Self { data_frame }
         }
 
+        fn get_last_fund_movement_id(&self) -> u32 {
+            if self.data_frame.is_empty() { 0u32 }
+            else {
+                if let AnyValue::UInt32(id) = self.data_frame.column("fund_movement_id").expect("Failed to find fund_movement_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+                else {panic!("Failed to create an integer id")}
+            }
+        }
+
         pub fn add_record(&mut self, transaction: &Transaction) -> () {
-            let fund_movement_id: u32 = {
-                if self.data_frame.is_empty() { 0u32 }
-                else {
-                    if let AnyValue::UInt32(id) = self.data_frame.column("fund_movement_id").expect("Failed to find fund_movement_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
-                    else {panic!("Failed to create an integer id")}
-                }
-            };
+            let fund_movement_id: u32 = self.get_last_fund_movement_id();
 
             if let Transaction::Credit {
                 value,
@@ -224,7 +230,7 @@ pub mod tables {
 
                 self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert debit record")
             } else {
-                panic!("Attempted to insert non-earning into the earnings table");
+                panic!("Attempted to insert non-income into the incomes table");
             }
         }
 
@@ -405,7 +411,7 @@ pub mod tables {
 
 
     pub struct DataBase {
-        earnings_table: EarningsTable,
+        incomes_table: IncomeTable,
         expenses_table: ExpensesTable,
         funds_table: FundsTable,
         party_table: PartyTable,
