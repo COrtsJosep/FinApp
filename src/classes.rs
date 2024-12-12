@@ -2,6 +2,7 @@ pub mod financial {
 	use chrono::prelude::*;
 	use std::collections::HashMap;
 	use std::fmt::Display;
+	use std::slice::Iter;
 
 	/// A party is a balanced set of accounting transactions that happened together and that are
 	/// related to each other.
@@ -41,6 +42,10 @@ pub mod financial {
 		/// Adds a new transaction to the party.
 		pub(crate) fn add_transaction(&mut self, transaction: Transaction) -> () {
 			self.transactions.push(transaction);
+		}
+
+		pub(crate) fn iter(&mut self) -> Iter<'_, Transaction> {
+			self.transactions.iter()
 		}
 	}
 

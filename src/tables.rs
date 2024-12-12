@@ -418,6 +418,57 @@ pub mod tables {
         entity_table: EntityTable,
         account_table: AccountTable
     }
+
+    impl DataBase {
+        pub(crate) fn new() -> DataBase {
+            let incomes_table = IncomeTable::new();
+            let expenses_table = ExpensesTable::new();
+            let funds_table = FundsTable::new();
+            let party_table = PartyTable::new();
+            let entity_table = EntityTable::new();
+            let account_table = AccountTable::new();
+
+            DataBase {
+                incomes_table: incomes_table,
+                expenses_table: expenses_table,
+                funds_table: funds_table,
+                party_table: party_table,
+                entity_table: entity_table,
+                account_table: account_table
+            }
+        }
+        pub(crate) fn insert_party(&mut self, party: &mut Party) -> () { // does party need to be mutable
+            for transaction in party.iter() {
+                self.insert_transaction(&transaction);
+            }
+        
+            self.party_table.add_record(party);
+        }
+        
+        fn insert_transaction(&mut self, transaction: &Transaction) -> () {
+            match transaction {
+                Transaction::Expense { .. } => self.expenses_table.add_record(transaction),
+                Transaction::Income { .. } => self.incomes_table.add_record(transaction),
+                Transaction::Credit { .. } | Transaction::Debit { .. } => self.funds_table.add_record(transaction)
+            }
+        }
+
+        pub(crate) fn size(&self) -> DataFrame {
+            let mut data_frame: DataFrame = df!(
+                "table" => ["income", "expenses", "funds", "party", "entity", "account"],
+                "records" => [
+                    self.incomes_table.data_frame.height() as u32,
+                    self.expenses_table.data_frame.height() as u32,
+                    self.funds_table.data_frame.height() as u32,
+                    self.party_table.data_frame.height() as u32,
+                    self.entity_table.data_frame.height() as u32,
+                    self.account_table.data_frame.height() as u32
+                ]
+            ).unwrap();
+
+            data_frame
+        }
+    }
 }
 
 #[cfg(test)]
@@ -441,6 +492,52 @@ mod tests {
         ).unwrap();
 
         FundsTable { data_frame }
+    }
+
+    fn init_party() -> Party {
+        let t1 = Transaction::Income {
+            value: 120.0,
+            currency: Currency::EUR,
+            date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
+            category: "Salary".to_string(),
+            subcategory: "Regular salary".to_string(),
+            description: "Finally got the bread".to_string(),
+            entity_id: 1,
+        };
+
+        let t2 = Transaction::Expense {
+            value: 100.0,
+            currency: Currency::SEK,
+            date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
+            category: "Drugs".to_string(),
+            subcategory: "Alcohol".to_string(),
+            description: "Bought some beers to celebrate".to_string(),
+            entity_id: 11,
+        };
+
+        let t3 = Transaction::Credit {
+            value: 120.0,
+            currency: Currency::EUR,
+            date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
+            account_id: 2,
+        };
+
+        let t4 = Transaction::Debit {
+            value: 100.0,
+            currency: Currency::SEK,
+            date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
+            account_id: 42,
+        };
+
+        // Example data
+        let items = vec![t1, t2, t3, t4];
+
+        let party: Party = Party {
+            transactions: items,
+            creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()
+        };
+
+        party
     }
 
     #[test]
@@ -535,6 +632,23 @@ mod tests {
         let expected_last_id = AnyValue::UInt32(0u32);
 
         assert_eq!(actual_last_id, &expected_last_id)
+    }
+
+    #[test]
+    fn correct_insert_party() {
+        let mut data_base: DataBase = DataBase::new();
+        let mut party: Party = init_party();
+
+        data_base.insert_party(&mut party);
+
+        let expected_result = df!(
+                "table" => ["income", "expenses", "funds", "party", "entity", "account"],
+                "records" => [1, 1, 2, 1, 0, 0]
+        ).unwrap();
+        
+        let actual_result = data_base.size();        
+        
+        assert!(actual_result.equals(&expected_result));
     }
 }
 
