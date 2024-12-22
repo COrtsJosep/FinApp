@@ -39,10 +39,5 @@ pub(crate) fn init_party() -> Party {
     // Example data
     let items = vec![t1, t2, t3, t4];
 
-    let party: Party = Party {
-        transactions: items,
-        creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap()
-    };
-
-    party
+    Party::new(items)
 }

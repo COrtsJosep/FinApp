@@ -33,10 +33,7 @@ mod tests {
         // Example data
         let items = vec![t1, t2];
 
-        let party: Party = Party {
-            transactions: items,
-            creation_date: NaiveDate::from_ymd_opt(2024, 12, 1).unwrap(),
-        };
+        let party: Party = Party::new(items);
 
         assert!(!party.is_valid());
     }

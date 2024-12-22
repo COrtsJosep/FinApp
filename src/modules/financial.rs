@@ -14,6 +14,14 @@ pub struct Party {
 }
 
 impl Party {
+
+	pub fn new(transactions: Vec<Transaction>) -> Party {
+		Party {
+			transactions,
+			creation_date: Local::now().date_naive()
+		}
+	}
+
 	/// Checks whether the party is balanced. This means that for every currency involved in
 	/// the party, the amount expended/earned is associated with a decrease/increase of funds
 	/// of the same amount and opposite sign.
