@@ -30,7 +30,7 @@ impl DataBase {
         }
     }
 
-    pub(crate) fn init() -> DataBase {
+    pub fn init() -> DataBase {
         let incomes_table = IncomeTable::init();
         let expenses_table = ExpensesTable::init();
         let funds_table = FundsTable::init();
@@ -48,7 +48,7 @@ impl DataBase {
         }
     }
 
-    pub(crate) fn save(&mut self) -> () {
+    pub fn save(&mut self) -> () {
         self.incomes_table.save();
         self.expenses_table.save();
         self.funds_table.save();
@@ -57,7 +57,7 @@ impl DataBase {
         self.account_table.save();
     }
 
-    pub(crate) fn insert_party(&mut self, party: &mut Party) -> () { // does party need to be mutable
+    pub fn insert_party(&mut self, party: &mut Party) -> () { // does party need to be mutable
         for transaction in party.iter() {
             self.insert_transaction(&transaction);
         }
@@ -89,11 +89,11 @@ impl DataBase {
         data_frame
     }
 
-    pub(crate) fn insert_entity(&mut self, entity: &Entity) -> () {
+    pub fn insert_entity(&mut self, entity: &Entity) -> () {
         self.entity_table.add_record(entity);
     }
 
-    pub(crate) fn insert_account(&mut self, account: &Account) -> () {
+    pub fn insert_account(&mut self, account: &Account) -> () {
         self.account_table.add_record(account);
     }
 }
