@@ -1,6 +1,7 @@
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
 use super::financial::{Party, Transaction, Entity, Account};
+use std::fs::File;
 
 pub struct IncomeTable {
     pub data_frame: DataFrame
@@ -17,22 +18,34 @@ impl IncomeTable {
             Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
-        ]).expect("Failed to initialize empty incomes table"); // considered unsafe. refactor?
+        ]).expect("Failed to initialize empty income table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
 
-    pub fn load() -> IncomeTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<IncomeTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read incomes table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/income_table.csv".into()))
+            .map_err(|e| format!("Failed to read income table: {}", e))?
             .finish()
-            .expect("Failed to load incomes table");
+            .map_err(|e| format!("Failed to load income table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/income_table.csv").expect("Could not create file income_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save income table.");
+    }
+    
+    pub fn init() -> IncomeTable {
+        IncomeTable::try_load().unwrap_or_else(|e| IncomeTable::new())
     }
 
     fn get_last_income_id(&self) -> u32 {
@@ -68,7 +81,7 @@ impl IncomeTable {
 
             self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert income record")
         } else {
-            panic!("Attempted to insert non-income into the incomes table");
+            panic!("Attempted to insert non-income into the income table");
         }
 
     }
@@ -98,17 +111,29 @@ impl ExpensesTable {
         Self { data_frame }
     }
 
-    pub fn load() -> ExpensesTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<ExpensesTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read expenses table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/expenses_table.csv".into()))
+            .map_err(|e| format!("Failed to read expenses table: {}", e))?
             .finish()
-            .expect("Failed to load expenses table");
+            .map_err(|e| format!("Failed to load expenses table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/expenses_table.csv").expect("Could not create file expenses_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save expenses table.");
+    }
+
+    pub fn init() -> ExpensesTable {
+        ExpensesTable::try_load().unwrap_or_else(|e| ExpensesTable::new())
     }
 
     fn get_last_expense_id(&self) -> u32 {
@@ -172,17 +197,29 @@ impl FundsTable {
         Self { data_frame }
     }
 
-    pub fn load() -> FundsTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<FundsTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read funds table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/funds_table.csv".into()))
+            .map_err(|e| format!("Failed to read funds table: {}", e))?
             .finish()
-            .expect("Failed to load funds table");
+            .map_err(|e| format!("Failed to load funds table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/funds_table.csv").expect("Could not create file funds_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save funds table.");
+    }
+
+    pub fn init() -> FundsTable {
+        FundsTable::try_load().unwrap_or_else(|e| FundsTable::new())
     }
 
     fn get_last_fund_movement_id(&self) -> u32 {
@@ -229,7 +266,7 @@ impl FundsTable {
 
             self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert debit record")
         } else {
-            panic!("Attempted to insert non-income into the incomes table");
+            panic!("Attempted to insert non-fund into the fund table");
         }
     }
 
@@ -252,17 +289,29 @@ impl PartyTable {
         Self { data_frame }
     }
 
-    pub fn load() -> PartyTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<PartyTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read party table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/party_table.csv".into()))
+            .map_err(|e| format!("Failed to read party table: {}", e))?
             .finish()
-            .expect("Failed to load party table");
+            .map_err(|e| format!("Failed to load party table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/party_table.csv").expect("Could not create file party_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save party table.");
+    }
+
+    pub fn init() -> PartyTable {
+        PartyTable::try_load().unwrap_or_else(|e| PartyTable::new())
     }
 
     pub fn get_last_party_id(&self) -> u32 {
@@ -307,17 +356,29 @@ impl EntityTable {
         Self { data_frame }
     }
 
-    pub fn load() -> EntityTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<EntityTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read entity table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/entity_table.csv".into()))
+            .map_err(|e| format!("Failed to read entity table: {}", e))?
             .finish()
-            .expect("Failed to load entity table");
+            .map_err(|e| format!("Failed to load entity table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/entity_table.csv").expect("Could not create file entity_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save entity table.");
+    }
+
+    pub fn init() -> EntityTable {
+        EntityTable::try_load().unwrap_or_else(|e| EntityTable::new())
     }
 
     fn get_last_entity_id(&self) -> u32 {
@@ -366,17 +427,29 @@ impl AccountTable {
         Self { data_frame }
     }
 
-    pub fn load() -> AccountTable {
-        let data_frame = CsvReadOptions::default()
+    pub fn try_load() -> Result<AccountTable, String> {
+        CsvReadOptions::default()
             .with_infer_schema_length(None)
             .with_has_header(true)
             .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
-            .try_into_reader_with_file_path(Some("path/file.csv".into()))
-            .expect("Failed to read account table") // considered unsafe. refactor?
+            .try_into_reader_with_file_path(Some("data/account_table.csv".into()))
+            .map_err(|e| format!("Failed to read account table: {}", e))?
             .finish()
-            .expect("Failed to load account table");
+            .map_err(|e| format!("Failed to load account table: {}", e))
+            .map(|data_frame| Self { data_frame })
+    }
 
-        Self { data_frame }
+    pub fn save(&mut self) -> () {
+        let mut file = File::create("data/account_table.csv").expect("Could not create file account_table.csv");
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.data_frame)
+            .expect("Failed to save account table.");
+    }
+
+    pub fn init() -> AccountTable {
+        AccountTable::try_load().unwrap_or_else(|e| AccountTable::new())
     }
 
     fn get_last_account_id(&self) -> u32 {
