@@ -175,6 +175,13 @@ impl Entity {
 	}
 }
 
+impl Display for Entity {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let str = format!("{} ({})", self.name.clone(), self.country.clone());
+		write!(f, "{}", str)
+	}
+}
+
 /// Account where funds are stored.
 pub struct Account {
 	name: String,
@@ -203,6 +210,17 @@ impl Account {
 			account_type,
 			initial_balance,
 		}
+	}
+}
+
+impl Display for Account {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let str = format!("{} ({}, {})",
+						  self.name,
+						  self.country,
+						  self.currency.to_string()
+		);
+		write!(f, "{}", str)
 	}
 }
 
