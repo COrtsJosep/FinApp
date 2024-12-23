@@ -30,13 +30,13 @@ impl Party {
 	/// instance, a 350 SEK bill for clothing and a 230 SEK bill for presents can be balanced
 	/// with a 500 SEK withdrawal from a bank account and an 80 SEK withdrawal from pocket money.
 	pub(crate) fn is_valid(&self) -> bool {
-		let mut aggregates: HashMap<&Currency, f32> = HashMap::new();
+		let mut aggregates: HashMap<&Currency, f64> = HashMap::new();
 
 		for transaction in &self.transactions {
-			let value: f32 = transaction.get_value() * transaction.get_sign();
+			let value: f64 = transaction.get_value() * transaction.get_sign();
 			let currency: &Currency = transaction.get_currency();
 
-			aggregates.entry(currency).and_modify(|aggregate: &mut f32| *aggregate += value).or_insert(value);
+			aggregates.entry(currency).and_modify(|aggregate: &mut f64| *aggregate += value).or_insert(value);
 		}
 
 		for (_, val) in aggregates.iter() {
@@ -59,33 +59,33 @@ impl Party {
 /// Basic entity of the accounting system. Incomes and expenses reflect what event provoked
 /// the movement, credit and debit record what funds were used.
 pub enum Transaction {
-	Income {value: f32,
+	Income {value: f64,
 		currency: Currency,
 		date: NaiveDate,
 		category: String, // salary, interest
 		subcategory: String, // regular salary, 13-month salary
 		description: String,
-		entity_id: u32},
-	Expense {value: f32,
+		entity_id: i64},
+	Expense {value: f64,
 		currency: Currency,
 		date: NaiveDate,
 		category: String, // utilities, rent, transport
 		subcategory: String, // train, bus, hairdresser
 		description: String,
-		entity_id: u32},
-	Credit {value: f32,
+		entity_id: i64},
+	Credit {value: f64,
 		currency: Currency,
 		date: NaiveDate,
-		account_id: u32},
-	Debit {value: f32,
+		account_id: i64},
+	Debit {value: f64,
 		currency: Currency,
 		date: NaiveDate,
-		account_id: u32}
+		account_id: i64}
 }
 
 impl Transaction {
 	/// Value getter.
-	fn get_value(&self) -> f32 {
+	fn get_value(&self) -> f64 {
 		match self {
 			Transaction::Income {..} => 1.0,
 			Transaction::Expense {..} => -1.0,
@@ -95,7 +95,7 @@ impl Transaction {
 	}
 
 	/// Sign getter.
-	fn get_sign(&self) -> f32 {
+	fn get_sign(&self) -> f64 {
 		match self {
 			Transaction::Income { value, .. }
 			| Transaction::Expense { value, .. }
@@ -181,7 +181,7 @@ pub struct Account {
 	country: String,
 	currency: Currency,
 	account_type: AccountType,
-	initial_balance: f32
+	initial_balance: f64
 }
 
 impl Account {
@@ -189,13 +189,13 @@ impl Account {
 	pub(crate) fn get_country(&self) -> String { self.country.to_string() }
 	pub(crate) fn get_currency(&self) -> &Currency { &self.currency }
 	pub (crate) fn get_account_type(&self) -> &AccountType { &self.account_type }
-	pub (crate) fn get_initial_balance(&self) -> f32 { self.initial_balance }
+	pub (crate) fn get_initial_balance(&self) -> f64 { self.initial_balance }
 
 	pub fn new(name: String,
 			   country: String,
 			   currency: Currency,
 			   account_type: AccountType,
-			   initial_balance: f32) -> Self {
+			   initial_balance: f64) -> Self {
 		Self {
 			name,
 			country,

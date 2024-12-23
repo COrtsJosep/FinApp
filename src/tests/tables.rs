@@ -7,15 +7,15 @@ mod tests {
 
     fn init_funds_table() -> FundsTable {
         let data_frame: DataFrame = df!(
-            "fund_movement_id" => [0u32, 1u32],
+            "fund_movement_id" => [0i64, 1i64],
             "fund_movement_type" => ["Credit", "Debit"],
-            "value" => [1309.23f32, -89.0f32],
+            "value" => [1309.23f64, -89.0f64],
             "currency" => [Currency::EUR.to_string(), Currency::EUR.to_string()],
             "date" => [
                 NaiveDate::from_ymd_opt(1997, 1, 10).unwrap(),
                 NaiveDate::from_ymd_opt(1985, 2, 15).unwrap()
             ],
-            "account_id" => [0u32, 0u32]
+            "account_id" => [0i64, 0i64]
         ).unwrap();
 
         FundsTable { data_frame }
@@ -36,14 +36,14 @@ mod tests {
             value: 300.0,
             currency: Currency::EUR,
             date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
-            account_id: 0u32,
+            account_id: 0i64,
         };
 
         funds_table.add_record(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::UInt32(0u32);
+        let expected_last_id = AnyValue::Int64(0i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }
@@ -55,14 +55,14 @@ mod tests {
             value: 300.0,
             currency: Currency::EUR,
             date: NaiveDate::from_ymd_opt(2024, 12, 2).unwrap(),
-            account_id: 0u32,
+            account_id: 0i64,
         };
 
         funds_table.add_record(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::UInt32(2u32);
+        let expected_last_id = AnyValue::Int64(2i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }
@@ -89,7 +89,7 @@ mod tests {
 
         let binding = entity_table.data_frame.column("entity_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::UInt32(0u32);
+        let expected_last_id = AnyValue::Int64(0i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }
@@ -103,14 +103,14 @@ mod tests {
             String::from("Credit Suisse"),
             Currency::CHF,
             AccountType::Deposit,
-            1080.0f32,
+            1080.0f64,
         );
 
         account_table.add_record(&account);
 
         let binding = account_table.data_frame.column("account_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::UInt32(0u32);
+        let expected_last_id = AnyValue::Int64(0i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }

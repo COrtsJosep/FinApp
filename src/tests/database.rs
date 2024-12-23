@@ -37,7 +37,7 @@ mod tests {
             String::from("Credit Suisse"),
             Currency::CHF,
             AccountType::Deposit,
-            1080.0f32,
+            1080.0f64,
         );
 
         data_base.insert_entity(&entity);

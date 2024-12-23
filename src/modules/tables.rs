@@ -10,14 +10,14 @@ pub struct IncomeTable {
 impl IncomeTable {
     pub fn new() -> IncomeTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("income_id"), Vec::<u32>::new())),
-            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
+            Column::from(Series::new(PlSmallStr::from("income_id"), Vec::<i64>::new())),
+            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
             Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
             Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
         ]).expect("Failed to initialize empty income table"); // considered unsafe. refactor?
 
         Self { data_frame }
@@ -48,10 +48,10 @@ impl IncomeTable {
         IncomeTable::try_load().unwrap_or_else(|e| IncomeTable::new())
     }
 
-    fn get_last_income_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    fn get_last_income_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("income_id").expect("Failed to find income_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("income_id").expect("Failed to find income_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
@@ -66,7 +66,7 @@ impl IncomeTable {
             description,
             entity_id
         } = transaction {
-            let income_id: u32 = self.get_last_income_id();
+            let income_id: i64 = self.get_last_income_id();
 
             let record = df!(
                 "income_id" => [income_id],
@@ -98,14 +98,14 @@ pub struct ExpensesTable {
 impl ExpensesTable {
     pub fn new() -> ExpensesTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("expense_id"), Vec::<u32>::new())),
-            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
+            Column::from(Series::new(PlSmallStr::from("expense_id"), Vec::<i64>::new())),
+            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
             Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
             Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
         ]).expect("Failed to initialize empty expenses table"); // considered unsafe. refactor?
 
         Self { data_frame }
@@ -136,10 +136,10 @@ impl ExpensesTable {
         ExpensesTable::try_load().unwrap_or_else(|e| ExpensesTable::new())
     }
 
-    fn get_last_expense_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    fn get_last_expense_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("expense_id").expect("Failed to find expense_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("expense_id").expect("Failed to find expense_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
@@ -154,7 +154,7 @@ impl ExpensesTable {
             description,
             entity_id
         } = transaction {
-            let expense_id: u32 = self.get_last_expense_id();
+            let expense_id: i64 = self.get_last_expense_id();
 
             let record = df!(
                 "expense_id" => [expense_id],
@@ -186,12 +186,12 @@ pub struct FundsTable {
 impl FundsTable {
     pub fn new() -> FundsTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("fund_movement_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("fund_movement_id"), Vec::<i64>::new())),
             Column::from(Series::new(PlSmallStr::from("fund_movement_type"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f32>::new())),
+            Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
             Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())),
         ]).expect("Failed to initialize empty funds table"); // considered unsafe. refactor?
 
         Self { data_frame }
@@ -222,16 +222,16 @@ impl FundsTable {
         FundsTable::try_load().unwrap_or_else(|e| FundsTable::new())
     }
 
-    fn get_last_fund_movement_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    fn get_last_fund_movement_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("fund_movement_id").expect("Failed to find fund_movement_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("fund_movement_id").expect("Failed to find fund_movement_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
 
     pub fn add_record(&mut self, transaction: &Transaction) -> () {
-        let fund_movement_id: u32 = self.get_last_fund_movement_id();
+        let fund_movement_id: i64 = self.get_last_fund_movement_id();
 
         if let Transaction::Credit {
             value,
@@ -282,7 +282,7 @@ pub struct PartyTable {
 impl PartyTable {
     pub fn new() -> PartyTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new())),
             Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
         ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
 
@@ -314,16 +314,16 @@ impl PartyTable {
         PartyTable::try_load().unwrap_or_else(|e| PartyTable::new())
     }
 
-    pub fn get_last_party_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    pub fn get_last_party_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("party_id").expect("Failed to find party_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("party_id").expect("Failed to find party_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
 
     pub fn add_record(&mut self, party: &Party) -> () {
-        let party_id: u32 = self.get_last_party_id();
+        let party_id: i64 = self.get_last_party_id();
 
         let record = df!(
             "party_id" => [party_id],
@@ -345,7 +345,7 @@ pub struct EntityTable {
 impl EntityTable {
     pub fn new() -> EntityTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
             Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("entity_type"), Vec::<String>::new())),
@@ -381,16 +381,16 @@ impl EntityTable {
         EntityTable::try_load().unwrap_or_else(|e| EntityTable::new())
     }
 
-    fn get_last_entity_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    fn get_last_entity_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("entity_id").expect("Failed to find entity_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("entity_id").expect("Failed to find entity_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
 
     pub fn add_record(&mut self, entity: &Entity) -> () {
-        let entity_id: u32 = self.get_last_entity_id();
+        let entity_id: i64 = self.get_last_entity_id();
 
         let record = df!(
             "entity_id" => [entity_id],
@@ -415,12 +415,12 @@ pub struct AccountTable {
 impl AccountTable {
     pub fn new() -> AccountTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<u32>::new())),
+            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())),
             Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("account_type"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("initial_balance"), Vec::<f32>::new())),
+            Column::from(Series::new(PlSmallStr::from("initial_balance"), Vec::<f64>::new())),
             Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
         ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
 
@@ -452,16 +452,16 @@ impl AccountTable {
         AccountTable::try_load().unwrap_or_else(|e| AccountTable::new())
     }
 
-    fn get_last_account_id(&self) -> u32 {
-        if self.data_frame.is_empty() { 0u32 }
+    fn get_last_account_id(&self) -> i64 {
+        if self.data_frame.is_empty() { 0i64 }
         else {
-            if let AnyValue::UInt32(id) = self.data_frame.column("account_id").expect("Failed to find account_id column").max_reduce().expect("Failed to generate id").value() { id + 1u32 }
+            if let AnyValue::Int64(id) = self.data_frame.column("account_id").expect("Failed to find account_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
             else {panic!("Failed to create an integer id")}
         }
     }
 
     pub fn add_record(&mut self, account: &Account) -> () {
-        let account_id: u32 = self.get_last_account_id();
+        let account_id: i64 = self.get_last_account_id();
 
         let record = df!(
             "account_id" => [account_id],

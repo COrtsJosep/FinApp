@@ -77,16 +77,20 @@ impl DataBase {
         let data_frame: DataFrame = df!(
             "table" => ["income", "expenses", "funds", "party", "entity", "account"],
             "records" => [
-                self.incomes_table.data_frame.height() as u32,
-                self.expenses_table.data_frame.height() as u32,
-                self.funds_table.data_frame.height() as u32,
-                self.party_table.data_frame.height() as u32,
-                self.entity_table.data_frame.height() as u32,
-                self.account_table.data_frame.height() as u32
+                self.incomes_table.data_frame.height() as i64,
+                self.expenses_table.data_frame.height() as i64,
+                self.funds_table.data_frame.height() as i64,
+                self.party_table.data_frame.height() as i64,
+                self.entity_table.data_frame.height() as i64,
+                self.account_table.data_frame.height() as i64
             ]
         ).unwrap();
 
         data_frame
+    }
+
+    pub fn print_income_table(&mut self) -> () {
+        self.incomes_table.display();
     }
 
     pub fn insert_entity(&mut self, entity: &Entity) -> () {
