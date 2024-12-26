@@ -11,3 +11,5 @@ chrono = "0.4.38"
 polars = { version = "0.45.0", features = ["lazy", "temporal"] }
 eframe = { version = "0.30.0", features = ["default"] }
 env_logger = { version = "0.10", default-features = false, features = ["auto-color", "humantime"] }
+strum = "0.26"
+strum_macros = "0.26"
