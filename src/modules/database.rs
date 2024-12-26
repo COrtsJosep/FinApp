@@ -101,3 +101,9 @@ impl DataBase {
         self.account_table.add_record(account);
     }
 }
+
+impl Default for DataBase {
+    fn default() -> Self {
+        Self::init()
+    }
+}

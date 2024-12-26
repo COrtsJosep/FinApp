@@ -3,6 +3,11 @@ name = "FinApp"
 version = "0.1.0"
 edition = "2021"
 
+#[lints]
+#workspace = true
+
 [dependencies]
 chrono = "0.4.38"
-polars = { version = "0.45.0", features = ["lazy", "temporal"]}
+polars = { version = "0.45.0", features = ["lazy", "temporal"] }
+eframe = { version = "0.30.0", features = ["default"] }
+env_logger = { version = "0.10", default-features = false, features = ["auto-color", "humantime"] }
