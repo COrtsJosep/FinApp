@@ -21,6 +21,13 @@ pub struct AppState {
     entity_country: String,
     entity_type: EntityType,
     entity_subtype: String,
+
+    account_name: String,
+    account_country: String,
+    account_currency: Currency,
+    account_type: AccountType,
+    account_initial_balance: f64,
+    account_initial_balance_temptative: String,
 }
 
 impl eframe::App for AppState {
@@ -44,6 +51,10 @@ impl eframe::App for AppState {
             self.handle_show_input_entity_window(ctx);
         }
 
+        if self.show_input_account_window {
+            self.handle_show_input_account_window(ctx);
+        }
+
         if self.show_plotting_window {
             // todo
         }
@@ -52,10 +63,7 @@ impl eframe::App for AppState {
 
 impl AppState {
     fn clear_fields(&mut self) -> () {
-        self.entity_name = String::default();
-        self.entity_country = String::default();
-        self.entity_type = EntityType::default();
-        self.entity_subtype = String::default();
+        *self = AppState::default();
     }
 
     pub fn handle_show_input_window(&mut self, ctx: &egui::Context) -> () {
@@ -75,6 +83,10 @@ impl AppState {
                     if ui.button("Add new entity").clicked() {
                         // unsure whether to involve show_input_window
                         self.show_input_entity_window = self.show_input_window & true;
+                    }
+                    if ui.button("Add new account").clicked() {
+                        // unsure whether to involve show_input_window
+                        self.show_input_account_window = self.show_input_window & true;
                     }
                 });
 
@@ -140,6 +152,93 @@ impl AppState {
                         self.clear_fields();
 
                         self.show_input_entity_window = false;
+                    }
+                });
+
+                if ctx.input(|i| i.viewport().close_requested()) {
+                    self.show_input_entity_window = false;
+                }
+            },
+        );
+    }
+    pub fn handle_show_input_account_window(&mut self, ctx: &egui::Context) -> () {
+        ctx.show_viewport_immediate(
+            egui::ViewportId::from_hash_of("input_account_window"),
+            egui::ViewportBuilder::default()
+                .with_title("Input account window")
+                .with_inner_size([400.0, 250.0]),
+            |ctx, class| {
+                assert!(
+                    class == egui::ViewportClass::Immediate,
+                    "This egui backend doesn't support multiple viewports"
+                );
+
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.label("Input window");
+                    ui.horizontal(|ui| {
+                        let account_name_label = ui.label("Account name: ");
+                        ui.text_edit_singleline(&mut self.account_name)
+                            .labelled_by(account_name_label.id);
+                    });
+                    ui.horizontal(|ui| {
+                        let account_country_label = ui.label("Account country: ");
+                        ui.text_edit_singleline(&mut self.account_country)
+                            .labelled_by(account_country_label.id);
+                    });
+
+                    ComboBox::from_label("Account currency")
+                        .selected_text(format!("{}", self.account_currency))
+                        .show_ui(ui, |ui| {
+                            for possible_account_currency in Currency::iter() {
+                                ui.selectable_value(
+                                    &mut self.account_currency,
+                                    possible_account_currency.clone(),
+                                    format!("{possible_account_currency}"),
+                                );
+                            }
+                        });
+
+                    ComboBox::from_label("Account type")
+                        .selected_text(format!("{}", self.account_type))
+                        .show_ui(ui, |ui| {
+                            for possible_account_type in AccountType::iter() {
+                                ui.selectable_value(
+                                    &mut self.account_type,
+                                    possible_account_type.clone(),
+                                    format!("{possible_account_type}"),
+                                );
+                            }
+                        });
+
+                    ui.horizontal(|ui| {
+                        let account_initial_balance_label = ui.label("Account initial balance: ");
+                        ui.text_edit_singleline(&mut self.account_initial_balance_temptative)
+                            .labelled_by(account_initial_balance_label.id);
+                    });
+
+                    let parsing_result = self.account_initial_balance_temptative.parse::<f64>();
+                    match parsing_result {
+                        Ok(value) => {
+                            self.account_initial_balance = value;
+
+                            if ui.button("Add new account").clicked() {
+                                let account: Account = Account::new(
+                                    self.account_name.clone(),
+                                    self.account_country.clone(),
+                                    self.account_currency.clone(),
+                                    self.account_type.clone(),
+                                    self.account_initial_balance,
+                                );
+                                self.database.insert_account(&account);
+                                self.database.save();
+                                self.clear_fields();
+
+                                self.show_input_account_window = false;
+                            }
+                        }
+                        Err(e) => {
+                            ui.label(format!("Invalid initial balance: {}", e));
+                        }
                     }
                 });
 

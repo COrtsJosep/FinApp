@@ -1,6 +1,6 @@
-use polars::prelude::*;
-use crate::modules::tables::*;
 use crate::modules::financial::*;
+use crate::modules::tables::*;
+use polars::prelude::*;
 
 pub struct DataBase {
     incomes_table: IncomeTable,
@@ -8,7 +8,7 @@ pub struct DataBase {
     funds_table: FundsTable,
     party_table: PartyTable,
     entity_table: EntityTable,
-    account_table: AccountTable
+    account_table: AccountTable,
 }
 
 impl DataBase {
@@ -26,7 +26,7 @@ impl DataBase {
             funds_table,
             party_table,
             entity_table,
-            account_table
+            account_table,
         }
     }
 
@@ -44,7 +44,7 @@ impl DataBase {
             funds_table,
             party_table,
             entity_table,
-            account_table
+            account_table,
         }
     }
 
@@ -57,7 +57,8 @@ impl DataBase {
         self.account_table.save();
     }
 
-    pub fn insert_party(&mut self, party: &mut Party) -> () { // does party need to be mutable
+    pub fn insert_party(&mut self, party: &mut Party) -> () {
+        // does party need to be mutable
         for transaction in party.iter() {
             self.insert_transaction(&transaction);
         }
@@ -69,7 +70,9 @@ impl DataBase {
         match transaction {
             Transaction::Expense { .. } => self.expenses_table.add_record(transaction),
             Transaction::Income { .. } => self.incomes_table.add_record(transaction),
-            Transaction::Credit { .. } | Transaction::Debit { .. } => self.funds_table.add_record(transaction)
+            Transaction::Credit { .. } | Transaction::Debit { .. } => {
+                self.funds_table.add_record(transaction)
+            }
         }
     }
 
@@ -84,13 +87,10 @@ impl DataBase {
                 self.entity_table.data_frame.height() as i64,
                 self.account_table.data_frame.height() as i64
             ]
-        ).unwrap();
+        )
+        .unwrap();
 
         data_frame
-    }
-
-    pub fn print_income_table(&mut self) -> () {
-        self.incomes_table.display();
     }
 
     pub fn insert_entity(&mut self, entity: &Entity) -> () {

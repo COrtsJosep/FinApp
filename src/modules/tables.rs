@@ -1,24 +1,46 @@
+use super::financial::{Account, Entity, Party, Transaction};
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
-use super::financial::{Party, Transaction, Entity, Account};
 use std::fs::File;
 
 pub struct IncomeTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl IncomeTable {
     pub fn new() -> IncomeTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("income_id"), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("income_id"),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
-        ]).expect("Failed to initialize empty income table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("category"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("subcategory"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("description"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_id"),
+                Vec::<i64>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty income table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -36,23 +58,39 @@ impl IncomeTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/income_table.csv").expect("Could not create file income_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file =
+            File::create("data/income_table.csv").expect("Could not create file income_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
             .finish(&mut self.data_frame)
             .expect("Failed to save income table.");
     }
-    
+
     pub fn init() -> IncomeTable {
         IncomeTable::try_load().unwrap_or_else(|e| IncomeTable::new())
     }
 
     fn get_last_income_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("income_id").expect("Failed to find income_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("income_id")
+                .expect("Failed to find income_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -64,8 +102,9 @@ impl IncomeTable {
             category,
             subcategory,
             description,
-            entity_id
-        } = transaction {
+            entity_id,
+        } = transaction
+        {
             let income_id: i64 = self.get_last_income_id();
 
             let record = df!(
@@ -77,13 +116,16 @@ impl IncomeTable {
                 "subcategory" => [subcategory.to_string()],
                 "description" => [description.to_string()],
                 "entity_id" => [*entity_id],
-            ).expect("Failed to create income record");
+            )
+            .expect("Failed to create income record");
 
-            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert income record")
+            self.data_frame = self
+                .data_frame
+                .vstack(&record)
+                .expect("Failed to insert income record")
         } else {
             panic!("Attempted to insert non-income into the income table");
         }
-
     }
 
     pub fn display(&self) {
@@ -92,21 +134,43 @@ impl IncomeTable {
 }
 
 pub struct ExpensesTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl ExpensesTable {
     pub fn new() -> ExpensesTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("expense_id"), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("expense_id"),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
-        ]).expect("Failed to initialize empty expenses table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("category"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("subcategory"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("description"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_id"),
+                Vec::<i64>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty expenses table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -124,7 +188,12 @@ impl ExpensesTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/expenses_table.csv").expect("Could not create file expenses_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file = File::create("data/expenses_table.csv")
+            .expect("Could not create file expenses_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
@@ -137,10 +206,21 @@ impl ExpensesTable {
     }
 
     fn get_last_expense_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("expense_id").expect("Failed to find expense_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("expense_id")
+                .expect("Failed to find expense_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -152,8 +232,9 @@ impl ExpensesTable {
             category,
             subcategory,
             description,
-            entity_id
-        } = transaction {
+            entity_id,
+        } = transaction
+        {
             let expense_id: i64 = self.get_last_expense_id();
 
             let record = df!(
@@ -165,13 +246,16 @@ impl ExpensesTable {
                 "subcategory" => [subcategory.to_string()],
                 "description" => [description.to_string()],
                 "entity_id" => [*entity_id],
-            ).expect("Failed to create expense record");
+            )
+            .expect("Failed to create expense record");
 
-            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert expense record")
+            self.data_frame = self
+                .data_frame
+                .vstack(&record)
+                .expect("Failed to insert expense record")
         } else {
             panic!("Attempted to insert non-expense into the expenses table");
         }
-
     }
 
     pub fn display(&self) {
@@ -180,19 +264,35 @@ impl ExpensesTable {
 }
 
 pub struct FundsTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl FundsTable {
     pub fn new() -> FundsTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("fund_movement_id"), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("fund_movement_type"), Vec::<String>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("fund_movement_id"),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("fund_movement_type"),
+                Vec::<String>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())),
-        ]).expect("Failed to initialize empty funds table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("account_id"),
+                Vec::<i64>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty funds table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -210,7 +310,12 @@ impl FundsTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/funds_table.csv").expect("Could not create file funds_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file =
+            File::create("data/funds_table.csv").expect("Could not create file funds_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
@@ -223,10 +328,21 @@ impl FundsTable {
     }
 
     fn get_last_fund_movement_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("fund_movement_id").expect("Failed to find fund_movement_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("fund_movement_id")
+                .expect("Failed to find fund_movement_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -237,8 +353,9 @@ impl FundsTable {
             value,
             currency,
             date,
-            account_id
-        } = transaction {
+            account_id,
+        } = transaction
+        {
             let record = df!(
                 "fund_movement_id" => [fund_movement_id],
                 "fund_movement_type" => ["Credit"], // very bad solution IMO
@@ -246,15 +363,20 @@ impl FundsTable {
                 "currency" => [currency.to_string()],
                 "date" => [*date],
                 "account_id" => [*account_id],
-            ).expect("Failed to create credit record");
+            )
+            .expect("Failed to create credit record");
 
-            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert credit record")
+            self.data_frame = self
+                .data_frame
+                .vstack(&record)
+                .expect("Failed to insert credit record")
         } else if let Transaction::Debit {
             value,
             currency,
             date,
-            account_id
-        } = transaction {
+            account_id,
+        } = transaction
+        {
             let record = df!(
                 "fund_movement_id" => [fund_movement_id],
                 "fund_movement_type" => ["Debit"], // awful solution IMO
@@ -262,9 +384,13 @@ impl FundsTable {
                 "currency" => [currency.to_string()],
                 "date" => [*date],
                 "account_id" => [*account_id],
-            ).expect("Failed to create debit record");
+            )
+            .expect("Failed to create debit record");
 
-            self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert debit record")
+            self.data_frame = self
+                .data_frame
+                .vstack(&record)
+                .expect("Failed to insert debit record")
         } else {
             panic!("Attempted to insert non-fund into the fund table");
         }
@@ -276,15 +402,19 @@ impl FundsTable {
 }
 
 pub struct PartyTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl PartyTable {
     pub fn new() -> PartyTable {
         let data_frame = DataFrame::new(vec![
             Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
-        ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("creation_date"),
+                Vec::<NaiveDate>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty party table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -302,7 +432,12 @@ impl PartyTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/party_table.csv").expect("Could not create file party_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file =
+            File::create("data/party_table.csv").expect("Could not create file party_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
@@ -315,10 +450,21 @@ impl PartyTable {
     }
 
     pub fn get_last_party_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("party_id").expect("Failed to find party_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("party_id")
+                .expect("Failed to find party_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -328,9 +474,13 @@ impl PartyTable {
         let record = df!(
             "party_id" => [party_id],
             "creation_date" => [party.creation_date]
-        ).expect("Failed to create party record");
+        )
+        .expect("Failed to create party record");
 
-        self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert party record")
+        self.data_frame = self
+            .data_frame
+            .vstack(&record)
+            .expect("Failed to insert party record")
     }
 
     pub fn display(&self) {
@@ -339,19 +489,35 @@ impl PartyTable {
 }
 
 pub struct EntityTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl EntityTable {
     pub fn new() -> EntityTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_id"),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_type"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_subtype"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
-        ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("country"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_type"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_subtype"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("creation_date"),
+                Vec::<NaiveDate>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty party table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -369,7 +535,12 @@ impl EntityTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/entity_table.csv").expect("Could not create file entity_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file =
+            File::create("data/entity_table.csv").expect("Could not create file entity_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
@@ -382,10 +553,21 @@ impl EntityTable {
     }
 
     fn get_last_entity_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("entity_id").expect("Failed to find entity_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("entity_id")
+                .expect("Failed to find entity_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -399,9 +581,13 @@ impl EntityTable {
             "entity_type" => [entity.get_entity_type().to_string()],
             "entity_subtype" => [entity.get_entity_subtype()],
             "creation_date" => [Local::now().date_naive()]
-        ).expect("Failed to create entity record");
+        )
+        .expect("Failed to create entity record");
 
-        self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert entity record")
+        self.data_frame = self
+            .data_frame
+            .vstack(&record)
+            .expect("Failed to insert entity record")
     }
 
     pub fn display(&self) {
@@ -409,20 +595,39 @@ impl EntityTable {
     }
 }
 pub struct AccountTable {
-    pub data_frame: DataFrame
+    pub data_frame: DataFrame,
 }
 
 impl AccountTable {
     pub fn new() -> AccountTable {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("account_id"),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("account_type"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("initial_balance"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))
-        ]).expect("Failed to initialize empty party table"); // considered unsafe. refactor?
+            Column::from(Series::new(
+                PlSmallStr::from("country"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("account_type"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("initial_balance"),
+                Vec::<f64>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("creation_date"),
+                Vec::<NaiveDate>::new(),
+            )),
+        ])
+        .expect("Failed to initialize empty party table"); // considered unsafe. refactor?
 
         Self { data_frame }
     }
@@ -440,7 +645,12 @@ impl AccountTable {
     }
 
     pub fn save(&mut self) -> () {
-        let mut file = File::create("data/account_table.csv").expect("Could not create file account_table.csv");
+        if self.data_frame.is_empty() {
+            return;
+        }
+
+        let mut file = File::create("data/account_table.csv")
+            .expect("Could not create file account_table.csv");
         CsvWriter::new(&mut file)
             .include_header(true)
             .with_separator(b',')
@@ -453,10 +663,21 @@ impl AccountTable {
     }
 
     fn get_last_account_id(&self) -> i64 {
-        if self.data_frame.is_empty() { 0i64 }
-        else {
-            if let AnyValue::Int64(id) = self.data_frame.column("account_id").expect("Failed to find account_id column").max_reduce().expect("Failed to generate id").value() { id + 1i64 }
-            else {panic!("Failed to create an integer id")}
+        if self.data_frame.is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame
+                .column("account_id")
+                .expect("Failed to find account_id column")
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
         }
     }
 
@@ -471,13 +692,16 @@ impl AccountTable {
             "account_type" => [account.get_account_type().to_string()],
             "initial_balance" => [account.get_initial_balance()],
             "creation_date" => [Local::now().date_naive()]
-        ).expect("Failed to create entity record");
+        )
+        .expect("Failed to create entity record");
 
-        self.data_frame = self.data_frame.vstack(&record).expect("Failed to insert account record")
+        self.data_frame = self
+            .data_frame
+            .vstack(&record)
+            .expect("Failed to insert account record")
     }
 
     pub fn display(&self) {
         println!("{}", self.data_frame);
     }
 }
-

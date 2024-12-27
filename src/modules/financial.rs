@@ -142,11 +142,21 @@ impl Display for Transaction {
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, EnumIter)]
 pub enum Currency {
     EUR,
     CHF,
     SEK,
+}
+
+impl Currency {
+    pub(crate) fn clone(&self) -> Currency {
+        match self {
+            Currency::EUR { .. } => Currency::EUR,
+            Currency::CHF { .. } => Currency::CHF,
+            Currency::SEK { .. } => Currency::SEK
+        }
+    }
 }
 
 // Conversion to string
@@ -160,6 +170,13 @@ impl Display for Currency {
         write!(f, "{}", str)
     }
 }
+
+impl Default for Currency {
+    fn default() -> Self {
+        Currency::EUR
+    }
+}
+
 
 /// Entity to which the expense is paid or, alternatively, that hands in the income.
 pub struct Entity {
@@ -297,11 +314,21 @@ impl Default for EntityType {
     }
 }
 
-#[derive(Debug, EnumIter)]
+#[derive(Debug, EnumIter, PartialEq)]
 pub enum AccountType {
     Deposit,
     Investment,
     Cash,
+}
+
+impl AccountType {
+    pub(crate) fn clone(&self) -> AccountType {
+        match self {
+            AccountType::Deposit { .. } => AccountType::Deposit,
+            AccountType::Investment { .. } => AccountType::Investment,
+            AccountType::Cash { .. } => AccountType::Cash,
+        }
+    }
 }
 
 /// Conversion to string
@@ -313,5 +340,11 @@ impl Display for AccountType {
             AccountType::Cash { .. } => "Cash".to_string(),
         };
         write!(f, "{}", str)
+    }
+}
+
+impl Default for AccountType {
+    fn default() -> Self {
+        AccountType::Deposit
     }
 }
