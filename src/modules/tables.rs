@@ -3,6 +3,7 @@ use chrono::{Local, NaiveDate};
 use polars::prelude::*;
 use std::fs::File;
 use std::str::FromStr;
+use std::vec::IntoIter;
 
 pub struct IncomeTable {
     pub data_frame: DataFrame,
@@ -73,7 +74,7 @@ impl IncomeTable {
     }
 
     pub fn init() -> IncomeTable {
-        IncomeTable::try_load().unwrap_or_else(|e| IncomeTable::new())
+        IncomeTable::try_load().unwrap_or_else(|_e| IncomeTable::new())
     }
 
     fn get_last_income_id(&self) -> i64 {
@@ -203,7 +204,7 @@ impl ExpensesTable {
     }
 
     pub fn init() -> ExpensesTable {
-        ExpensesTable::try_load().unwrap_or_else(|e| ExpensesTable::new())
+        ExpensesTable::try_load().unwrap_or_else(|_e| ExpensesTable::new())
     }
 
     fn get_last_expense_id(&self) -> i64 {
@@ -325,7 +326,7 @@ impl FundsTable {
     }
 
     pub fn init() -> FundsTable {
-        FundsTable::try_load().unwrap_or_else(|e| FundsTable::new())
+        FundsTable::try_load().unwrap_or_else(|_e| FundsTable::new())
     }
 
     fn get_last_fund_movement_id(&self) -> i64 {
@@ -447,7 +448,7 @@ impl PartyTable {
     }
 
     pub fn init() -> PartyTable {
-        PartyTable::try_load().unwrap_or_else(|e| PartyTable::new())
+        PartyTable::try_load().unwrap_or_else(|_e| PartyTable::new())
     }
 
     pub fn get_last_party_id(&self) -> i64 {
@@ -550,7 +551,7 @@ impl EntityTable {
     }
 
     pub fn init() -> EntityTable {
-        EntityTable::try_load().unwrap_or_else(|e| EntityTable::new())
+        EntityTable::try_load().unwrap_or_else(|_e| EntityTable::new())
     }
 
     fn get_last_entity_id(&self) -> i64 {
@@ -595,11 +596,16 @@ impl EntityTable {
         println!("{}", self.data_frame);
     }
 
-    pub(crate) fn iter(&self) -> impl Iterator<Item = (i64, &str)> {
-        let id_col = self.data_frame.column("entity_id").unwrap().i64().unwrap();
-        let name_col = self.data_frame.column("name").unwrap().str().unwrap();
-
-        id_col.into_no_null_iter().zip(name_col.into_no_null_iter())
+    pub(crate) fn iter(&self) -> IntoIter<i64> {
+        self
+            .data_frame
+            .column("entity_id")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
     }
 
     pub(crate) fn get_entity(&self, entity_id: i64) -> Entity {
@@ -688,7 +694,7 @@ impl AccountTable {
     }
 
     pub fn init() -> AccountTable {
-        AccountTable::try_load().unwrap_or_else(|e| AccountTable::new())
+        AccountTable::try_load().unwrap_or_else(|_e| AccountTable::new())
     }
 
     fn get_last_account_id(&self) -> i64 {

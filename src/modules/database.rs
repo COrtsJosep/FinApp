@@ -1,3 +1,4 @@
+use std::vec::IntoIter;
 use crate::modules::financial::*;
 use crate::modules::tables::*;
 use polars::prelude::*;
@@ -101,7 +102,7 @@ impl DataBase {
         self.account_table.add_record(account);
     }
 
-    pub(crate) fn iter_entities(&mut self) -> impl Iterator<Item = (i64, &str)> {
+    pub(crate) fn iter_entity_ids(&mut self) -> IntoIter<i64> {
         self.entity_table.iter()
     }
 

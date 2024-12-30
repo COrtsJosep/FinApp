@@ -1,10 +1,13 @@
-use chrono::{Local, NaiveDate};
 use crate::modules::database::*;
 use crate::modules::financial::*;
+use chrono::{Local, NaiveDate};
 use eframe::egui;
 use eframe::egui::ComboBox;
-use strum::IntoEnumIterator;
 use egui_extras::*;
+use strum::IntoEnumIterator;
+
+const WINDOW_WIDTH: f32 = 600.0;
+const WINDOW_HEIGHT: f32 = 400.0;
 
 #[derive(Default)]
 pub struct AppState {
@@ -32,7 +35,7 @@ pub struct AppState {
     transactions: Vec<Transaction>,
 
     transaction_value: f64,
-    transaction_value_tentative:String,
+    transaction_value_tentative: String,
     transaction_currency: Currency,
     transaction_date: NaiveDate,
     transaction_category: String,
@@ -105,47 +108,36 @@ impl AppState {
     }
 
     fn are_valid_entity_fields(&self) -> bool {
-        (
-            (self.entity_name.len() > 0)
-            & (self.entity_country.len() > 0)
-        )
+        (self.entity_name.len() > 0) & (self.entity_country.len() > 0)
     }
 
     fn are_valid_account_fields(&self) -> bool {
         let parsing_result = self.account_initial_balance_tentative.parse::<f64>();
         let valid_initial_balance: bool = match parsing_result {
-            Ok(value) => true,
-            Err(e) => false
+            Ok(_value) => true,
+            Err(_e) => false,
         };
 
-        (
-            (self.account_name.len() > 0)
-            & (self.account_country.len() > 0)
-            & valid_initial_balance
-        )
+        (self.account_name.len() > 0) & (self.account_country.len() > 0) & valid_initial_balance
     }
 
     fn are_valid_transaction_fields(&self) -> bool {
         let parsing_result = self.transaction_value_tentative.parse::<f64>();
         let valid_transaction_value: bool = match parsing_result {
-            Ok(value) => true,
-            Err(e) => false
+            Ok(_value) => true,
+            Err(_e) => false,
         };
 
-        (
-            ((self.transaction_category.len() > 0) | self.transaction_type.is_fund_change())
+        ((self.transaction_category.len() > 0) | self.transaction_type.is_fund_change())
             & valid_transaction_value
-        )
     }
-
-
 
     pub fn handle_show_input_window(&mut self, ctx: &egui::Context) -> () {
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input window")
-                .with_inner_size([400.0, 250.0]),
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -179,7 +171,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("input_entity_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input entity window")
-                .with_inner_size([400.0, 250.0]),
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -247,7 +239,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("input_account_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input account window")
-                .with_inner_size([400.0, 250.0]),
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -269,7 +261,7 @@ impl AppState {
 
                     ComboBox::from_label("Account currency")
                         .selected_text(format!("{}", self.account_currency))
-                        .show_ui(ui,|ui| {
+                        .show_ui(ui, |ui| {
                             for possible_account_currency in Currency::iter() {
                                 ui.selectable_value(
                                     &mut self.account_currency,
@@ -326,14 +318,14 @@ impl AppState {
             },
         );
     }
-    pub fn handle_show_input_party_window (&mut self, ctx: &egui::Context) -> () {
+    pub fn handle_show_input_party_window(&mut self, ctx: &egui::Context) -> () {
         let mut party: Party = Party::new(self.transactions.clone());
 
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_party_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input party window")
-                .with_inner_size([400.0, 250.0]),
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -361,23 +353,26 @@ impl AppState {
                             self.show_input_party_window = false;
                         }
                     }
+                });
+                if ctx.input(|i| i.viewport().close_requested()) {
+                    self.show_input_party_window = false;
                 }
-                )
-            }
+            },
         );
 
-        if ctx.input(|i| i.viewport().close_requested()) {
-            self.show_input_party_window = false;
-        }
+        
     }
-    pub fn handle_show_input_transaction_window (&mut self, ctx: &egui::Context) -> () {
-        self.transaction_entity_string = self.database.get_entity(self.transaction_entity_id).to_string();
+    pub fn handle_show_input_transaction_window(&mut self, ctx: &egui::Context) -> () {
+        self.transaction_entity_string = self
+            .database
+            .get_entity(self.transaction_entity_id)
+            .to_string();
 
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_transaction_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input transaction window")
-                .with_inner_size([400.0, 250.0]),
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -388,7 +383,11 @@ impl AppState {
                     ui.label("Input window");
                     ui.horizontal(|ui| {
                         for transaction_type in TransactionType::iter() {
-                            ui.selectable_value(&mut self.transaction_type, transaction_type.clone(), transaction_type.to_string());
+                            ui.selectable_value(
+                                &mut self.transaction_type,
+                                transaction_type.clone(),
+                                transaction_type.to_string(),
+                            );
                         }
                     });
                     ui.end_row();
@@ -401,7 +400,7 @@ impl AppState {
 
                     ComboBox::from_label("Transaction currency")
                         .selected_text(format!("{}", self.transaction_currency))
-                        .show_ui(ui,|ui| {
+                        .show_ui(ui, |ui| {
                             for possible_transaction_currency in Currency::iter() {
                                 ui.selectable_value(
                                     &mut self.transaction_currency,
@@ -411,21 +410,29 @@ impl AppState {
                             }
                         });
 
-                    self.transaction_date = Local::now().date_naive();
-                    ui.add(DatePickerButton::new(&mut self.transaction_date));
-                    ui.end_row();
+                    //self.transaction_date = Local::now().date_naive();
+                    ui.horizontal(|ui| {
+                        ui.add(DatePickerButton::new(&mut self.transaction_date));
+                        if ui.button("Today").clicked() {
+                            self.transaction_date = Local::now().date_naive();
+                        }
+                        ui.end_row();
+                    });
 
                     if self.transaction_type.is_fund_change() {
-
-                    } else { // it is not fund change
+                    } else {
+                        // it is not fund change
                         ComboBox::from_label("Transaction entity")
                             .selected_text(format!("{}", self.transaction_entity_string))
                             .show_ui(ui, |ui| {
-                                for (entity_id, entity_name) in self.database.iter_entities() {
+                                for entity_id in self.database.iter_entity_ids() {
                                     ui.selectable_value(
                                         &mut self.transaction_entity_id,
                                         entity_id,
-                                        format!("{entity_name}"),
+                                        format!(
+                                            "{:}",
+                                            self.database.get_entity(entity_id).to_string()
+                                        ),
                                     );
                                 }
                             });
@@ -436,13 +443,15 @@ impl AppState {
                                 .labelled_by(transaction_category_label.id);
                         });
                         ui.horizontal(|ui| {
-                            let transaction_subcategory_label = ui.label("Transaction subcategory: ");
+                            let transaction_subcategory_label =
+                                ui.label("Transaction subcategory: ");
                             ui.text_edit_singleline(&mut self.transaction_subcategory)
                                 .labelled_by(transaction_subcategory_label.id);
                         });
 
                         ui.horizontal(|ui| {
-                            let transaction_description_label = ui.label("Transaction description: ");
+                            let transaction_description_label =
+                                ui.label("Transaction description: ");
                             ui.text_edit_singleline(&mut self.transaction_description)
                                 .labelled_by(transaction_description_label.id);
                         });
@@ -462,7 +471,7 @@ impl AppState {
                                 category: self.transaction_category.clone(),
                                 subcategory: self.transaction_subcategory.clone(),
                                 description: self.transaction_description.clone(),
-                                entity_id: self.transaction_entity_id
+                                entity_id: self.transaction_entity_id,
                             },
                             TransactionType::Expense => Transaction::Expense {
                                 value: self.transaction_value,
@@ -471,20 +480,20 @@ impl AppState {
                                 category: self.transaction_category.clone(),
                                 subcategory: self.transaction_subcategory.clone(),
                                 description: self.transaction_description.clone(),
-                                entity_id: self.transaction_entity_id
+                                entity_id: self.transaction_entity_id,
                             },
                             TransactionType::Credit => Transaction::Credit {
                                 value: self.transaction_value,
                                 currency: self.transaction_currency.clone(),
                                 date: self.transaction_date,
-                                account_id: self.transaction_account_id
+                                account_id: self.transaction_account_id,
                             },
                             TransactionType::Debit => Transaction::Debit {
                                 value: self.transaction_value,
                                 currency: self.transaction_currency.clone(),
                                 date: self.transaction_date,
-                                account_id: self.transaction_account_id
-                            }
+                                account_id: self.transaction_account_id,
+                            },
                         };
 
                         if ui.button("Add transaction").clicked() {
@@ -496,13 +505,11 @@ impl AppState {
                     } else {
                         ui.label("Invalid transaction fields");
                     }
+                });
+                if ctx.input(|i| i.viewport().close_requested()) {
+                    self.show_input_transaction_window = false;
                 }
-                )
-            }
+            },
         );
-
-        if ctx.input(|i| i.viewport().close_requested()) {
-            self.show_input_transaction_window = false;
-        }
     }
-}                    
+}
