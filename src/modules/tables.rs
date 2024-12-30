@@ -1,7 +1,8 @@
-use super::financial::{Account, Entity, Party, Transaction};
+use super::financial::{Account, Entity, EntityType, Party, Transaction};
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
 use std::fs::File;
+use std::str::FromStr;
 
 pub struct IncomeTable {
     pub data_frame: DataFrame,
@@ -593,6 +594,34 @@ impl EntityTable {
     pub fn display(&self) {
         println!("{}", self.data_frame);
     }
+
+    pub(crate) fn iter(&self) -> impl Iterator<Item = (i64, &str)> {
+        let id_col = self.data_frame.column("entity_id").unwrap().i64().unwrap();
+        let name_col = self.data_frame.column("name").unwrap().str().unwrap();
+
+        id_col.into_no_null_iter().zip(name_col.into_no_null_iter())
+    }
+
+    pub(crate) fn get_entity(&self, entity_id: i64) -> Entity {
+        let mask = self.data_frame
+            .column("entity_id")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .equal(entity_id);
+
+        let record = self.data_frame.filter(&mask).unwrap();
+
+        Entity::new(
+            record.column("name").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            record.column("country").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            EntityType::from_str(
+                record.column("entity_type").unwrap().str().unwrap().get(0).unwrap()
+            ).unwrap(),
+            record.column("entity_subtype").unwrap().str().unwrap().get(0).unwrap().to_string()
+        )
+    }
+
 }
 pub struct AccountTable {
     pub data_frame: DataFrame,

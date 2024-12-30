@@ -100,6 +100,15 @@ impl DataBase {
     pub fn insert_account(&mut self, account: &Account) -> () {
         self.account_table.add_record(account);
     }
+
+    pub(crate) fn iter_entities(&mut self) -> impl Iterator<Item = (i64, &str)> {
+        self.entity_table.iter()
+    }
+
+    pub(crate) fn get_entity(&self, entity_id: i64) -> Entity {
+        // rewrite to get_entity(self, entity_id :i64) -> Entity ?
+        self.entity_table.get_entity(entity_id)
+    }
 }
 
 impl Default for DataBase {

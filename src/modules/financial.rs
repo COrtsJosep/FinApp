@@ -3,7 +3,8 @@ use std::collections::HashMap;
 use std::fmt::Display;
 use std::slice::Iter;
 use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use strum_macros::{EnumIter, EnumString};
+use std::str::FromStr;
 
 /// A party is a balanced set of accounting transactions that happened together and that are
 /// related to each other.
@@ -49,7 +50,8 @@ impl Party {
             } // one or more cents off
         }
 
-        true
+        // return true if party is balanced and is nonempty
+        !self.transactions.is_empty()
     }
 
     /// Adds a new transaction to the party.
@@ -62,8 +64,50 @@ impl Party {
     }
 }
 
+#[derive(Debug, Hash, PartialEq, Eq, EnumIter)]
+pub enum TransactionType {
+    Income, Expense, Credit, Debit
+}
+
+impl TransactionType {
+    pub(crate) fn clone(&self) -> TransactionType {
+        match self {
+            TransactionType::Income => TransactionType::Income,
+            TransactionType::Expense => TransactionType::Expense,
+            TransactionType::Credit => TransactionType::Credit,
+            TransactionType::Debit => TransactionType::Debit
+        }
+    }
+
+    pub(crate) fn is_fund_change(&self) -> bool {
+        match self {
+            TransactionType::Income | TransactionType::Expense => false,
+            TransactionType::Credit | TransactionType::Debit => true
+        }
+    }
+}
+
+// Conversion to string
+impl Display for TransactionType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            TransactionType::Income => "Income".to_string(),
+            TransactionType::Expense => "Expense".to_string(),
+            TransactionType::Credit => "Credit".to_string(),
+            TransactionType::Debit => "Debit".to_string()
+        };
+        write!(f, "{}", str)
+    }
+}
+
+impl Default for TransactionType {
+    fn default() -> Self { TransactionType::Income }
+}
+
+
 /// Basic entity of the accounting system. Incomes and expenses reflect what event provoked
 /// the movement, credit and debit record what funds were used.
+#[derive(Clone)]
 pub enum Transaction {
     Income {
         value: f64,
@@ -98,8 +142,8 @@ pub enum Transaction {
 }
 
 impl Transaction {
-    /// Value getter.
-    fn get_value(&self) -> f64 {
+    /// Sign getter.
+    fn get_sign(&self) -> f64 {
         match self {
             Transaction::Income { .. } => 1.0,
             Transaction::Expense { .. } => -1.0,
@@ -108,8 +152,8 @@ impl Transaction {
         }
     }
 
-    /// Sign getter.
-    fn get_sign(&self) -> f64 {
+    /// Value getter.
+    fn get_value(&self) -> f64 {
         match self {
             Transaction::Income { value, .. }
             | Transaction::Expense { value, .. }
@@ -133,16 +177,28 @@ impl Transaction {
 impl Display for Transaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
-            Transaction::Income { .. } => "Income".to_string(),
-            Transaction::Expense { .. } => "Expense".to_string(),
-            Transaction::Credit { .. } => "Credit".to_string(),
-            Transaction::Debit { .. } => "Debit".to_string(),
+            Transaction::Income {
+                value, currency, date, category, subcategory,  .. } => format!(
+                "Income ({category}, {subcategory}): {currency} {value}, at date {date}"
+            ),
+            Transaction::Expense {
+                value, currency, date, category, subcategory,  .. } => format!(
+                "Expense ({category}, {subcategory}): {currency} {value}, at date {date}"
+            ),
+            Transaction::Credit {
+                value, currency, date, .. } => format!(
+                "Credit: {currency} {value}, at date {date}"
+            ),
+            Transaction::Debit {
+                value, currency, date, .. } => format!(
+                "Debit: {currency} {value}, at date {date}"
+            ),
         };
         write!(f, "{}", str)
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, EnumIter)]
+#[derive(Debug, Hash, PartialEq, Eq, EnumIter, Clone)]
 pub enum Currency {
     EUR,
     CHF,
@@ -277,7 +333,7 @@ impl Display for Account {
     }
 }
 
-#[derive(Debug, EnumIter, PartialEq)]
+#[derive(Debug, EnumIter, PartialEq, EnumString)]
 pub enum EntityType {
     Firm,
     Human,
