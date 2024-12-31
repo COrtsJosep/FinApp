@@ -23,14 +23,14 @@ mod tests {
 
     #[test]
     fn correct_funds_table_init() {
-        let funds_table: FundsTable = FundsTable::new();
+        let funds_table: Box<FundsTable> = FundsTable::new();
 
         assert!(funds_table.data_frame.is_empty());
     }
 
     #[test]
     fn correct_id_empty_funds_table_init() {
-        let mut funds_table: FundsTable = FundsTable::new();
+        let mut funds_table: FundsTable = *FundsTable::new();
 
         let transaction = Transaction::Debit {
             value: 300.0,
@@ -39,7 +39,7 @@ mod tests {
             account_id: 0i64,
         };
 
-        funds_table.add_record(&transaction);
+        funds_table.insert_transaction(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -49,7 +49,7 @@ mod tests {
     }
 
     #[test]
-    fn correct_id_nonempty_funds_table_addition() {
+    fn correct_id_nonempty_funds_table_insertion() {
         let mut funds_table: FundsTable = init_funds_table();
         let transaction = Transaction::Debit {
             value: 300.0,
@@ -58,7 +58,7 @@ mod tests {
             account_id: 0i64,
         };
 
-        funds_table.add_record(&transaction);
+        funds_table.insert_transaction(&transaction);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -69,14 +69,14 @@ mod tests {
 
     #[test]
     fn correct_entity_table_init() {
-        let entity_table: EntityTable = EntityTable::new();
+        let entity_table: EntityTable = *EntityTable::new();
 
         assert!(entity_table.data_frame.is_empty());
     }
 
     #[test]
     fn correct_id_empty_entity_table_init() {
-        let mut entity_table: EntityTable = EntityTable::new();
+        let mut entity_table: EntityTable = *EntityTable::new();
 
         let entity = Entity::new(
             String::from("Aldi"),
@@ -85,7 +85,7 @@ mod tests {
             String::from("Supermarket"),
         );
 
-        entity_table.add_record(&entity);
+        entity_table.insert_entity(&entity);
 
         let binding = entity_table.data_frame.column("entity_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn correct_id_empty_account_table_init() {
-        let mut account_table: AccountTable = AccountTable::new();
+        let mut account_table: AccountTable = *AccountTable::new();
 
         let account = Account::new(
             String::from("Current account"),
@@ -106,7 +106,7 @@ mod tests {
             1080.0f64,
         );
 
-        account_table.add_record(&account);
+        account_table.insert_account(&account);
 
         let binding = account_table.data_frame.column("account_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();

@@ -14,12 +14,12 @@ pub struct DataBase {
 
 impl DataBase {
     pub(crate) fn new() -> DataBase {
-        let incomes_table = IncomeTable::new();
-        let expenses_table = ExpensesTable::new();
-        let funds_table = FundsTable::new();
-        let party_table = PartyTable::new();
-        let entity_table = EntityTable::new();
-        let account_table = AccountTable::new();
+        let incomes_table = *IncomeTable::new();
+        let expenses_table = *ExpensesTable::new();
+        let funds_table = *FundsTable::new();
+        let party_table = *PartyTable::new();
+        let entity_table = *EntityTable::new();
+        let account_table = *AccountTable::new();
 
         DataBase {
             incomes_table,
@@ -32,12 +32,12 @@ impl DataBase {
     }
 
     pub fn init() -> DataBase {
-        let incomes_table = IncomeTable::init();
-        let expenses_table = ExpensesTable::init();
-        let funds_table = FundsTable::init();
-        let party_table = PartyTable::init();
-        let entity_table = EntityTable::init();
-        let account_table = AccountTable::init();
+        let incomes_table = *IncomeTable::init();
+        let expenses_table = *ExpensesTable::init();
+        let funds_table = *FundsTable::init();
+        let party_table = *PartyTable::init();
+        let entity_table = *EntityTable::init();
+        let account_table = *AccountTable::init();
 
         DataBase {
             incomes_table,
@@ -64,15 +64,15 @@ impl DataBase {
             self.insert_transaction(&transaction);
         }
 
-        self.party_table.add_record(party);
+        self.party_table.insert_party(party);
     }
 
     fn insert_transaction(&mut self, transaction: &Transaction) -> () {
         match transaction {
-            Transaction::Expense { .. } => self.expenses_table.add_record(transaction),
-            Transaction::Income { .. } => self.incomes_table.add_record(transaction),
+            Transaction::Expense { .. } => self.expenses_table.insert_transaction(transaction),
+            Transaction::Income { .. } => self.incomes_table.insert_transaction(transaction),
             Transaction::Credit { .. } | Transaction::Debit { .. } => {
-                self.funds_table.add_record(transaction)
+                self.funds_table.insert_transaction(transaction)
             }
         }
     }
@@ -95,11 +95,11 @@ impl DataBase {
     }
 
     pub fn insert_entity(&mut self, entity: &Entity) -> () {
-        self.entity_table.add_record(entity);
+        self.entity_table.insert_entity(entity);
     }
 
     pub fn insert_account(&mut self, account: &Account) -> () {
-        self.account_table.add_record(account);
+        self.account_table.insert_account(account);
     }
 
     pub(crate) fn iter_entity_ids(&mut self) -> IntoIter<i64> {
