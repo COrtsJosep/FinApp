@@ -5,8 +5,116 @@ use std::fs::File;
 use std::str::FromStr;
 use std::vec::IntoIter;
 
+trait Table {
+    /// Returns the name of the table
+    fn name() -> String;
+
+    /// Returns a reference to the dataframe of the table struct
+    fn data_frame(&self) -> &DataFrame;
+
+    /// Returns a mutable reference to the dataframe of the table struct
+    fn mut_data_frame(&mut self) -> &mut DataFrame;
+
+    /// Creates a table instance by consuming a dataframe
+    fn create(data_frame: DataFrame) -> Box<Self>;
+
+    /// Creates a table instance with zero rows
+    fn new() -> Box<Self>;
+
+    /// Creates a table instance by trying to load a csv in the right location
+    fn try_load() -> Result<Box<Self>, String> {
+        CsvReadOptions::default()
+            .with_infer_schema_length(None)
+            .with_has_header(true)
+            .with_parse_options(CsvParseOptions::default().with_try_parse_dates(true))
+            .try_into_reader_with_file_path(Some(format!("data/{}_table.csv", Self::name()).into()))
+            .map_err(|e| format!("Failed to read {} table: {}", Self::name(), e))?
+            .finish()
+            .map_err(|e| format!("Failed to load {} table: {}", Self::name(), e))
+            .map(|data_frame| Self::create(data_frame))
+    }
+
+    /// Creates a table instance by trying to load the csv data and,
+    /// if there is none, by creating an empty one
+    fn init() -> Box<Self> {
+        Self::try_load().unwrap_or_else(|_e| Self::new())
+    }
+
+    /// Saves the table data in the right location
+    fn save(&mut self) -> () {
+        if self.data_frame().is_empty() {
+            return;
+        }
+
+        let mut file =
+            File::create(format!("data/{}_table.csv", Self::name()))
+                .expect(format!("Could not create file {}_table.csv", Self::name()).as_str());
+
+        CsvWriter::new(&mut file)
+            .include_header(true)
+            .with_separator(b',')
+            .finish(&mut self.mut_data_frame())
+            .expect(format!("Failed to save {} table.", Self::name()).as_str());
+    }
+
+    /// Gets the ID of the last record of the table. If the table is empty,
+    /// returns 0
+    fn last_id(&self) -> i64 {
+        if self.data_frame().is_empty() {
+            0i64
+        } else {
+            if let AnyValue::Int64(id) = self
+                .data_frame()
+                .column(format!("{}_id", Self::name()).as_str())
+                .expect(format!("Failed to find {}_id column", Self::name()).as_str())
+                .max_reduce()
+                .expect("Failed to generate id")
+                .value()
+            {
+                id + 1i64
+            } else {
+                panic!("Failed to create an integer id")
+            }
+        }
+    }
+
+    /// Adds record to the table
+    fn add_record(&mut self, transaction: &Transaction) -> ();
+
+    /// Prints the table
+    fn display(&self) {
+        println!("{}", self.data_frame());
+    }
+}
+
 pub struct IncomeTable {
     pub data_frame: DataFrame,
+}
+
+impl Table for IncomeTable {
+    fn name() -> String {
+        String::from("income")
+    }
+
+    fn data_frame(&self) -> &DataFrame {
+        &self.data_frame
+    }
+
+    fn mut_data_frame(&mut self) -> &mut DataFrame {
+        &mut self.data_frame
+    }
+
+    fn create(data_frame: DataFrame) -> Box<Self> {
+        Box::new(IncomeTable { data_frame })
+    }
+
+    fn new() -> Box<Self> {
+        todo!()
+    }
+
+    fn add_record(&mut self, transaction: &Transaction) -> () {
+        todo!()
+    }
 }
 
 impl IncomeTable {
