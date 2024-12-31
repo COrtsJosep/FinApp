@@ -412,10 +412,10 @@ impl EntityTable {
 
         let record = df!(
             format!("{}_id", EntityTable::name()) => [id],
-            "name" => [entity.get_name()],
-            "country" => [entity.get_country()],
-            format!("{}_type", EntityTable::name()) => [entity.get_entity_type().to_string()],
-            format!("{}_subtype", EntityTable::name()) => [entity.get_entity_subtype()],
+            "name" => [entity.name()],
+            "country" => [entity.country()],
+            format!("{}_type", EntityTable::name()) => [entity.entity_type().to_string()],
+            format!("{}_subtype", EntityTable::name()) => [entity.entity_subtype()],
             "creation_date" => [Local::now().date_naive()]
         )
         .expect(format!("Failed to create {} record", EntityTable::name()).as_str());
@@ -438,7 +438,7 @@ impl EntityTable {
             .into_iter()
     }
 
-    pub(crate) fn get_entity(&self, entity_id: i64) -> Entity {
+    pub(crate) fn entity(&self, entity_id: i64) -> Entity {
         let mask = self.data_frame
             .column(format!("{}_id", EntityTable::name()).as_str())
             .unwrap()
@@ -501,11 +501,11 @@ impl AccountTable {
 
         let record = df!(
             format!("{}_id", AccountTable::name()) => [id],
-            "name" => [account.get_name()],
-            "country" => [account.get_country()],
-            "currency" => [account.get_currency().to_string()],
-            format!("{}_type", AccountTable::name()) => [account.get_account_type().to_string()],
-            "initial_balance" => [account.get_initial_balance()],
+            "name" => [account.name()],
+            "country" => [account.country()],
+            "currency" => [account.currency().to_string()],
+            format!("{}_type", AccountTable::name()) => [account.account_type().to_string()],
+            "initial_balance" => [account.initial_balance()],
             "creation_date" => [Local::now().date_naive()]
         )
         .expect(format!("Failed to create {} record", AccountTable::name()).as_str());

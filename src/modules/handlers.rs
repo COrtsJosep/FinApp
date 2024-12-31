@@ -365,7 +365,7 @@ impl AppState {
     pub fn handle_show_input_transaction_window(&mut self, ctx: &egui::Context) -> () {
         self.transaction_entity_string = self
             .database
-            .get_entity(self.transaction_entity_id)
+            .entity(self.transaction_entity_id)
             .to_string();
 
         ctx.show_viewport_immediate(
@@ -431,7 +431,7 @@ impl AppState {
                                         entity_id,
                                         format!(
                                             "{:}",
-                                            self.database.get_entity(entity_id).to_string()
+                                            self.database.entity(entity_id).to_string()
                                         ),
                                     );
                                 }

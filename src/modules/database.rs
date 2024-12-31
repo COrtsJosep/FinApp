@@ -106,9 +106,8 @@ impl DataBase {
         self.entity_table.iter()
     }
 
-    pub(crate) fn get_entity(&self, entity_id: i64) -> Entity {
-        // rewrite to get_entity(self, entity_id :i64) -> Entity ?
-        self.entity_table.get_entity(entity_id)
+    pub(crate) fn entity(&self, entity_id: i64) -> Entity {
+        self.entity_table.entity(entity_id)
     }
 }
 

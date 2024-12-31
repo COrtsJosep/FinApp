@@ -33,8 +33,8 @@ impl Party {
         let mut aggregates: HashMap<&Currency, f64> = HashMap::new();
 
         for transaction in &self.transactions {
-            let value: f64 = transaction.get_value() * transaction.get_sign();
-            let currency: &Currency = transaction.get_currency();
+            let value: f64 = transaction.value() * transaction.sign();
+            let currency: &Currency = transaction.currency();
 
             aggregates
                 .entry(currency)
@@ -141,7 +141,7 @@ pub enum Transaction {
 
 impl Transaction {
     /// Sign getter.
-    fn get_sign(&self) -> f64 {
+    fn sign(&self) -> f64 {
         match self {
             Transaction::Income { .. } => 1.0,
             Transaction::Expense { .. } => -1.0,
@@ -151,7 +151,7 @@ impl Transaction {
     }
 
     /// Value getter.
-    fn get_value(&self) -> f64 {
+    fn value(&self) -> f64 {
         match self {
             Transaction::Income { value, .. }
             | Transaction::Expense { value, .. }
@@ -161,7 +161,7 @@ impl Transaction {
     }
 
     /// Currency getter.
-    fn get_currency(&self) -> &Currency {
+    fn currency(&self) -> &Currency {
         match self {
             Transaction::Income { currency, .. }
             | Transaction::Expense { currency, .. }
@@ -241,16 +241,16 @@ pub struct Entity {
 }
 
 impl Entity {
-    pub(crate) fn get_name(&self) -> String {
+    pub(crate) fn name(&self) -> String {
         self.name.to_string()
     }
-    pub(crate) fn get_country(&self) -> String {
+    pub(crate) fn country(&self) -> String {
         self.country.to_string()
     }
-    pub(crate) fn get_entity_type(&self) -> &EntityType {
+    pub(crate) fn entity_type(&self) -> &EntityType {
         &self.entity_type
     }
-    pub(crate) fn get_entity_subtype(&self) -> String {
+    pub(crate) fn entity_subtype(&self) -> String {
         self.entity_subtype.to_string()
     }
 
@@ -286,19 +286,19 @@ pub struct Account {
 }
 
 impl Account {
-    pub(crate) fn get_name(&self) -> String {
+    pub(crate) fn name(&self) -> String {
         self.name.to_string()
     }
-    pub(crate) fn get_country(&self) -> String {
+    pub(crate) fn country(&self) -> String {
         self.country.to_string()
     }
-    pub(crate) fn get_currency(&self) -> &Currency {
+    pub(crate) fn currency(&self) -> &Currency {
         &self.currency
     }
-    pub(crate) fn get_account_type(&self) -> &AccountType {
+    pub(crate) fn account_type(&self) -> &AccountType {
         &self.account_type
     }
-    pub(crate) fn get_initial_balance(&self) -> f64 {
+    pub(crate) fn initial_balance(&self) -> f64 {
         self.initial_balance
     }
 
