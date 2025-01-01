@@ -317,6 +317,9 @@ impl FundsTable {
             )
                 .expect("Failed to create debit record");
 
+            print!("{:}", record);
+            print!("{:}", self.data_frame);
+
             self.data_frame = self
                 .data_frame
                 .vstack(&record)
@@ -401,13 +404,13 @@ impl Table for EntityTable {
     }
 
     fn new() -> Box<Self> {
-        let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from(format!("{}_id", EntityTable::name())), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from(format!("{}_type", EntityTable::name())), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from(format!("{}_subtype", EntityTable::name())), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))])
+        let data_frame: DataFrame = df!(
+            format!("{}_id", EntityTable::name()) => [0i64],
+            "name" => ["Unknown"],
+            "country" => ["Unknown"],
+            format!("{}_type", EntityTable::name()) => [EntityType::default().to_string()],
+            format!("{}_subtype", EntityTable::name()) => [""],
+            "creation_date" => [Local::now().date_naive()])
             .expect(format!("Failed to initialize empty {} table", EntityTable::name()).as_str());
 
         EntityTable::create(data_frame)
@@ -492,15 +495,15 @@ impl Table for AccountTable {
     }
 
     fn new() -> Box<Self> {
-        let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from(format!("{}_id", AccountTable::name())), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("name"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("country"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from(format!("{}_type", AccountTable::name())), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("initial_balance"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))])
-            .expect("Failed to initialize empty party table");
+        let data_frame: DataFrame = df!(
+            format!("{}_id", AccountTable::name()) => [0i64],
+            "name" => ["Unknown"],
+            "country" => ["Unknown"],
+            "currency" => [Currency::default().to_string()],
+            format!("{}_type", AccountTable::name()) => [AccountType::default().to_string()],
+            "initial_balance" => [0.0f64],
+            "creation_date" => [Local::now().date_naive()])
+            .expect(format!("Failed to initialize empty {} table", AccountTable::name()).as_str());
         
         AccountTable::create(data_frame)
     }

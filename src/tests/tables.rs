@@ -15,7 +15,8 @@ mod tests {
                 NaiveDate::from_ymd_opt(1997, 1, 10).unwrap(),
                 NaiveDate::from_ymd_opt(1985, 2, 15).unwrap()
             ],
-            "account_id" => [0i64, 0i64]
+            "account_id" => [0i64, 0i64],
+            "party_id" => [0i64, 1i64],
         ).unwrap();
 
         FundsTable { data_frame }
@@ -81,7 +82,7 @@ mod tests {
     fn correct_entity_table_init() {
         let entity_table: EntityTable = *EntityTable::new();
 
-        assert!(entity_table.data_frame.is_empty());
+        assert_eq!(entity_table.data_frame.height(), 1);
     }
 
     #[test]
@@ -104,7 +105,7 @@ mod tests {
             .max_reduce()
             .unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::Int64(0i64);
+        let expected_last_id = AnyValue::Int64(1i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }
@@ -125,12 +126,12 @@ mod tests {
 
         let binding = account_table
             .data_frame()
-            .column("{}_id")
+            .column(format!("{}_id", AccountTable::name()).as_str())
             .unwrap()
             .max_reduce()
             .unwrap();
         let actual_last_id = binding.value();
-        let expected_last_id = AnyValue::Int64(0i64);
+        let expected_last_id = AnyValue::Int64(1i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
     }

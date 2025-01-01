@@ -14,7 +14,7 @@ mod tests {
 
         let expected_result = df!(
                 "table" => ["income", "expenses", "funds", "party", "entity", "account"],
-                "records" => [1, 1, 2, 1, 0, 0]
+                "records" => [1, 1, 2, 1, 1, 1]
         ).unwrap();
 
         let actual_result = data_base.size();
@@ -45,7 +45,7 @@ mod tests {
 
         let expected_result = df!(
                 "table" => ["income", "expenses", "funds", "party", "entity", "account"],
-                "records" => [0, 0, 0, 0, 1, 1]
+                "records" => [0, 0, 0, 0, 2, 2]
         ).unwrap();
 
         let actual_result = data_base.size();
