@@ -59,24 +59,25 @@ impl DataBase {
     }
 
     pub fn insert_party(&mut self, party: &mut Party) -> () {
-        // does party need to be mutable
+        let party_id: i64 = self.party_table.next_id();
         for transaction in party.iter() {
-            self.insert_transaction(&transaction);
+            self.insert_transaction(&transaction, party_id);
         }
 
         self.party_table.insert_party(party);
     }
 
-    fn insert_transaction(&mut self, transaction: &Transaction) -> () {
+    fn insert_transaction(&mut self, transaction: &Transaction, party_id: i64) -> () {
         match transaction {
-            Transaction::Expense { .. } => self.expenses_table.insert_transaction(transaction),
-            Transaction::Income { .. } => self.incomes_table.insert_transaction(transaction),
+            Transaction::Expense { .. } => self.expenses_table.insert_transaction(transaction, party_id),
+            Transaction::Income { .. } => self.incomes_table.insert_transaction(transaction, party_id),
             Transaction::Credit { .. } | Transaction::Debit { .. } => {
-                self.funds_table.insert_transaction(transaction)
+                self.funds_table.insert_transaction(transaction, party_id)
             }
         }
     }
 
+    /// Returns the number of records in each table, for testing purposes
     pub(crate) fn size(&self) -> DataFrame {
         let data_frame: DataFrame = df!(
             "table" => ["income", "expenses", "funds", "party", "entity", "account"],

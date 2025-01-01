@@ -114,7 +114,8 @@ impl Table for IncomeTable {
             Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new()))])
+            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
             .expect(format!("Failed to initialize empty {} table", IncomeTable::name()).as_str());
 
         IncomeTable::create(data_frame)
@@ -123,7 +124,7 @@ impl Table for IncomeTable {
 
 impl IncomeTable {
     /// Adds income transaction to the table
-    pub fn insert_transaction(&mut self, transaction: &Transaction) -> () {
+    pub fn insert_transaction(&mut self, transaction: &Transaction, party_id: i64) -> () {
         if let Transaction::Income {
             value,
             currency,
@@ -144,7 +145,9 @@ impl IncomeTable {
                     "category" => [category.to_string()],
                     "subcategory" => [subcategory.to_string()],
                     "description" => [description.to_string()],
-                    "entity_id" => [*entity_id])
+                    "entity_id" => [*entity_id],
+                    "party_id" => [party_id]
+            )
                 .expect(format!("Failed to create {} record", IncomeTable::name()).as_str());
 
             self.data_frame = self
@@ -187,7 +190,8 @@ impl Table for ExpensesTable {
             Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new()))])
+            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
             .expect("Failed to initialize empty expenses table");
 
         ExpensesTable::create(data_frame)
@@ -196,7 +200,7 @@ impl Table for ExpensesTable {
 
 impl ExpensesTable {
     /// Adds expense transaction to the table
-    pub fn insert_transaction(&mut self, transaction: &Transaction) -> () {
+    pub fn insert_transaction(&mut self, transaction: &Transaction, party_id: i64) -> () {
         if let Transaction::Expense {
             value,
             currency,
@@ -218,6 +222,7 @@ impl ExpensesTable {
                 "subcategory" => [subcategory.to_string()],
                 "description" => [description.to_string()],
                 "entity_id" => [*entity_id],
+                "party_id" => [party_id]
             )
                 .expect(format!("Failed to create {} record", ExpensesTable::name()).as_str());
 
@@ -253,12 +258,14 @@ impl Table for FundsTable {
     }
 
     fn new() -> Box<Self> {
-        let data_frame = DataFrame::new(vec![Column::from(Series::new(PlSmallStr::from(format!("{}_id", FundsTable::name())), Vec::<i64>::new())),
+        let data_frame = DataFrame::new(vec![
+            Column::from(Series::new(PlSmallStr::from(format!("{}_id", FundsTable::name())), Vec::<i64>::new())),
             Column::from(Series::new(PlSmallStr::from(format!("{}_type", FundsTable::name())), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
             Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
             Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new()))])
+            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())), 
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
             .expect(format!("Failed to initialize empty {} table", FundsTable::name()).as_str());
 
         FundsTable::create(data_frame)
@@ -267,7 +274,7 @@ impl Table for FundsTable {
 
 impl FundsTable {
     /// Adds funds transaction to the table
-    pub fn insert_transaction(&mut self, transaction: &Transaction) -> () {
+    pub fn insert_transaction(&mut self, transaction: &Transaction, party_id: i64) -> () {
         let id: i64 = self.next_id();
 
         if let Transaction::Credit {
@@ -284,6 +291,7 @@ impl FundsTable {
                 "currency" => [currency.to_string()],
                 "date" => [*date],
                 "account_id" => [*account_id],
+                "party_id" => [party_id]
             )
                 .expect("Failed to create credit record");
 
@@ -305,6 +313,7 @@ impl FundsTable {
                 "currency" => [currency.to_string()],
                 "date" => [*date],
                 "account_id" => [*account_id],
+                "party_id" => [party_id]
             )
                 .expect("Failed to create debit record");
 

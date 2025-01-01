@@ -39,7 +39,7 @@ mod tests {
             account_id: 0i64,
         };
 
-        funds_table.insert_transaction(&transaction);
+        funds_table.insert_transaction(&transaction, 0);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
@@ -58,7 +58,7 @@ mod tests {
             account_id: 0i64,
         };
 
-        funds_table.insert_transaction(&transaction);
+        funds_table.insert_transaction(&transaction, 0);
 
         let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
         let actual_last_id = binding.value();
