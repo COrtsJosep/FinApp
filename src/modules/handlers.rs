@@ -44,7 +44,7 @@ pub struct AppState {
     transaction_entity_id: i64,
     transaction_entity_string: String,
     transaction_account_id: i64,
-    transaction_account_name: String,
+    transaction_account_string: String,
     transaction_type: TransactionType,
 }
 
@@ -103,7 +103,7 @@ impl AppState {
         self.transaction_entity_id = i64::default();
         self.transaction_entity_string = String::default();
         self.transaction_account_id = i64::default();
-        self.transaction_account_name = String::default();
+        self.transaction_account_string = String::default();
         self.transaction_type = TransactionType::default();
     }
 
@@ -367,6 +367,10 @@ impl AppState {
             .database
             .entity(self.transaction_entity_id)
             .to_string();
+        self.transaction_account_string = self
+            .database
+            .account(self.transaction_account_id)
+            .to_string();
 
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_transaction_window"),
@@ -410,7 +414,6 @@ impl AppState {
                             }
                         });
 
-                    //self.transaction_date = Local::now().date_naive();
                     ui.horizontal(|ui| {
                         ui.add(DatePickerButton::new(&mut self.transaction_date));
                         if ui.button("Today").clicked() {
@@ -420,6 +423,20 @@ impl AppState {
                     });
 
                     if self.transaction_type.is_fund_change() {
+                        ComboBox::from_label("Transaction account")
+                            .selected_text(format!("{}", self.transaction_account_string))
+                            .show_ui(ui, |ui| {
+                                for account_id in self.database.iter_account_ids() {
+                                    ui.selectable_value(
+                                        &mut self.transaction_account_id,
+                                        account_id,
+                                        format!(
+                                            "{:}",
+                                            self.database.account(account_id).to_string()
+                                        ),
+                                    );
+                                }
+                            });
                     } else {
                         // it is not fund change
                         ComboBox::from_label("Transaction entity")

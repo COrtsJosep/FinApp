@@ -109,6 +109,14 @@ impl DataBase {
     pub(crate) fn entity(&self, entity_id: i64) -> Entity {
         self.entity_table.entity(entity_id)
     }
+
+    pub(crate) fn iter_account_ids(&mut self) -> IntoIter<i64> {
+        self.account_table.iter()
+    }
+
+    pub(crate) fn account(&self, account_id: i64) -> Account {
+        self.account_table.account(account_id)
+    }
 }
 
 impl Default for DataBase {

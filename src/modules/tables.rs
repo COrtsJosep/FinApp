@@ -1,4 +1,4 @@
-use super::financial::{Account, Entity, EntityType, Party, Transaction};
+use super::financial::{Account, AccountType, Currency, Entity, EntityType, Party, Transaction};
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
 use std::fs::File;
@@ -406,6 +406,19 @@ impl Table for EntityTable {
 }
 
 impl EntityTable {
+    /// Iterator over IDs
+    pub(crate) fn iter(&self) -> IntoIter<i64> {
+        self
+            .data_frame
+            .column(format!("{}_id", EntityTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
+    }
+
     /// Adds entity to the table
     pub fn insert_entity(&mut self, entity: &Entity) -> () {
         let id: i64 = self.next_id();
@@ -426,25 +439,15 @@ impl EntityTable {
             .expect(format!("Failed to insert {} record", EntityTable::name()).as_str())
     }
 
-    pub(crate) fn iter(&self) -> IntoIter<i64> {
-        self
-            .data_frame
-            .column(format!("{}_id", EntityTable::name()).as_str())
-            .unwrap()
-            .i64()
-            .unwrap()
-            .into_no_null_iter()
-            .collect::<Vec<i64>>()
-            .into_iter()
-    }
 
-    pub(crate) fn entity(&self, entity_id: i64) -> Entity {
+    /// Returns entity given ID
+    pub(crate) fn entity(&self, id: i64) -> Entity {
         let mask = self.data_frame
             .column(format!("{}_id", EntityTable::name()).as_str())
             .unwrap()
             .i64()
             .unwrap()
-            .equal(entity_id);
+            .equal(id);
 
         let record = self.data_frame.filter(&mask).unwrap();
 
@@ -495,6 +498,19 @@ impl Table for AccountTable {
 }
 
 impl AccountTable {
+    /// Iterator over IDs
+    pub(crate) fn iter(&self) -> IntoIter<i64> {
+        self
+            .data_frame
+            .column(format!("{}_id", AccountTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
+    }
+
     /// Adds account record to the table
     pub fn insert_account(&mut self, account: &Account) -> () {
         let id: i64 = self.next_id();
@@ -514,5 +530,29 @@ impl AccountTable {
             .data_frame
             .vstack(&record)
             .expect(format!("Failed to insert {} record", AccountTable::name()).as_str())
+    }
+
+    /// Retrieves account from the table, given ID
+    pub(crate) fn account(&self, id: i64) -> Account {
+        let mask = self.data_frame
+            .column(format!("{}_id", AccountTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .equal(id);
+
+        let record = self.data_frame.filter(&mask).unwrap();
+
+        Account::new(
+            record.column("name").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            record.column("country").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            Currency::from_str(
+                record.column("currency").unwrap().str().unwrap().get(0).unwrap()
+            ).unwrap(),
+            AccountType::from_str(
+                record.column(format!("{}_type", AccountTable::name()).as_str()).unwrap().str().unwrap().get(0).unwrap()
+            ).unwrap(),
+            record.column("initial_balance").unwrap().f64().unwrap().get(0).unwrap()
+        )
     }
 }

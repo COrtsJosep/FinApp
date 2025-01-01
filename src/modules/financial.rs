@@ -196,7 +196,7 @@ impl Display for Transaction {
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, EnumIter, Clone)]
+#[derive(Debug, Hash, PartialEq, Eq, EnumIter, Clone, EnumString)]
 pub enum Currency {
     EUR,
     CHF,
@@ -368,7 +368,7 @@ impl Default for EntityType {
     }
 }
 
-#[derive(Debug, EnumIter, PartialEq)]
+#[derive(Debug, EnumIter, PartialEq, EnumString)]
 pub enum AccountType {
     Deposit,
     Investment,
