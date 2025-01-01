@@ -62,6 +62,12 @@ impl Party {
     }
 }
 
+impl Default for Party {
+    fn default() -> Party {
+        Party::new(Vec::<Transaction>::new())
+    }
+}
+
 #[derive(Debug, Hash, PartialEq, Eq, EnumIter)]
 pub enum TransactionType {
     Income, Expense, Credit, Debit

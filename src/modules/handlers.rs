@@ -32,7 +32,7 @@ pub struct AppState {
     account_initial_balance: f64,
     account_initial_balance_tentative: String,
 
-    transactions: Vec<Transaction>,
+    party: Party,
 
     transaction_value: f64,
     transaction_value_tentative: String,
@@ -319,8 +319,6 @@ impl AppState {
         );
     }
     pub fn handle_show_input_party_window(&mut self, ctx: &egui::Context) -> () {
-        let mut party: Party = Party::new(self.transactions.clone());
-
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_party_window"),
             egui::ViewportBuilder::default()
@@ -336,7 +334,7 @@ impl AppState {
                     ui.label("Input window");
 
                     ui.label("Transactions:");
-                    for transaction in party.iter() {
+                    for transaction in self.party.iter() {
                         ui.label(transaction.to_string());
                     }
 
@@ -344,9 +342,9 @@ impl AppState {
                         self.show_input_transaction_window = self.show_input_party_window & true;
                     }
 
-                    if party.is_valid() {
+                    if self.party.is_valid() {
                         if ui.button("Add party").clicked() {
-                            self.database.insert_party(&mut party);
+                            self.database.insert_party(&mut self.party);
                             self.database.save();
                             self.clear_fields();
 
@@ -514,7 +512,7 @@ impl AppState {
                         };
 
                         if ui.button("Add transaction").clicked() {
-                            self.transactions.push(transaction);
+                            self.party.add_transaction(transaction);
                             self.clear_transaction_fields();
 
                             self.show_input_transaction_window = false;
