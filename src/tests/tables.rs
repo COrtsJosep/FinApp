@@ -41,7 +41,12 @@ mod tests {
 
         funds_table.insert_transaction(&transaction, 0);
 
-        let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
+        let binding = funds_table
+            .data_frame()
+            .column(format!("{}_id", FundsTable::name()).as_str())
+            .unwrap()
+            .max_reduce()
+            .unwrap();
         let actual_last_id = binding.value();
         let expected_last_id = AnyValue::Int64(0i64);
 
@@ -60,7 +65,12 @@ mod tests {
 
         funds_table.insert_transaction(&transaction, 0);
 
-        let binding = funds_table.data_frame.column("fund_movement_id").unwrap().max_reduce().unwrap();
+        let binding = funds_table
+            .data_frame()
+            .column(format!("{}_id", FundsTable::name()).as_str())
+            .unwrap()
+            .max_reduce()
+            .unwrap();
         let actual_last_id = binding.value();
         let expected_last_id = AnyValue::Int64(2i64);
 
@@ -87,7 +97,12 @@ mod tests {
 
         entity_table.insert_entity(&entity);
 
-        let binding = entity_table.data_frame.column("entity_id").unwrap().max_reduce().unwrap();
+        let binding = entity_table
+            .data_frame()
+            .column(format!("{}_id", EntityTable::name()).as_str())
+            .unwrap()
+            .max_reduce()
+            .unwrap();
         let actual_last_id = binding.value();
         let expected_last_id = AnyValue::Int64(0i64);
 
@@ -108,7 +123,12 @@ mod tests {
 
         account_table.insert_account(&account);
 
-        let binding = account_table.data_frame.column("account_id").unwrap().max_reduce().unwrap();
+        let binding = account_table
+            .data_frame()
+            .column("{}_id")
+            .unwrap()
+            .max_reduce()
+            .unwrap();
         let actual_last_id = binding.value();
         let expected_last_id = AnyValue::Int64(0i64);
 
