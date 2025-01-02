@@ -13,6 +13,18 @@ pub struct DataBase {
 }
 
 impl DataBase {
+    pub(crate) fn account_countries(&self) -> Vec<String> {
+        self.account_table.countries()
+    }
+}
+
+impl DataBase {
+    pub(crate) fn entity_countries(&self) -> Vec<String> {
+        self.entity_table.countries()
+    }
+}
+
+impl DataBase {
     pub(crate) fn new() -> DataBase {
         let incomes_table = *IncomeTable::new();
         let expenses_table = *ExpensesTable::new();

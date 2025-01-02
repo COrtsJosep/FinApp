@@ -1,3 +1,4 @@
+use derivative::*;
 use crate::modules::database::*;
 use crate::modules::financial::*;
 use chrono::{Local, NaiveDate};
@@ -5,11 +6,13 @@ use eframe::egui;
 use eframe::egui::ComboBox;
 use egui_extras::*;
 use strum::IntoEnumIterator;
+use egui_autocomplete::AutoCompleteTextEdit;
 
 const WINDOW_WIDTH: f32 = 600.0;
 const WINDOW_HEIGHT: f32 = 400.0;
 
-#[derive(Default)]
+#[derive(Derivative)]
+#[derivative(Default)]
 pub struct AppState {
     show_input_window: bool,
     show_input_entity_window: bool,
@@ -24,7 +27,7 @@ pub struct AppState {
     entity_country: String,
     entity_type: EntityType,
     entity_subtype: String,
-
+    
     account_name: String,
     account_country: String,
     account_currency: Currency,
@@ -37,6 +40,7 @@ pub struct AppState {
     transaction_value: f64,
     transaction_value_tentative: String,
     transaction_currency: Currency,
+    #[derivative(Default(value="Local::now().date_naive()"))]
     transaction_date: NaiveDate,
     transaction_category: String,
     transaction_subcategory: String,
@@ -96,7 +100,7 @@ impl AppState {
         self.transaction_value = f64::default();
         self.transaction_value_tentative = String::default();
         self.transaction_currency = Currency::default();
-        self.transaction_date = NaiveDate::default();
+        self.transaction_date = Local::now().date_naive();
         self.transaction_category = String::default();
         self.transaction_subcategory = String::default();
         self.transaction_description = String::default();
@@ -186,9 +190,15 @@ impl AppState {
                             .labelled_by(entity_name_label.id);
                     });
                     ui.horizontal(|ui| {
-                        let entity_country_label = ui.label("Entity country: ");
-                        ui.text_edit_singleline(&mut self.entity_country)
-                            .labelled_by(entity_country_label.id);
+                        ui.label("Entity country: ");
+                        ui.add(
+                            AutoCompleteTextEdit::new(
+                                &mut self.entity_country, 
+                                self.database.entity_countries(),
+                            )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
+                        );
                     });
                     ComboBox::from_label("Entity type")
                         .selected_text(format!("{}", self.entity_type))
@@ -253,10 +263,22 @@ impl AppState {
                         ui.text_edit_singleline(&mut self.account_name)
                             .labelled_by(account_name_label.id);
                     });
+                    //ui.horizontal(|ui| {
+                    //    let account_country_label = ui.label("Account country: ");
+                    //    ui.text_edit_singleline(&mut self.account_country)
+                    //        .labelled_by(account_country_label.id);
+                    //});
+
                     ui.horizontal(|ui| {
-                        let account_country_label = ui.label("Account country: ");
-                        ui.text_edit_singleline(&mut self.account_country)
-                            .labelled_by(account_country_label.id);
+                        ui.label("Account country: ");
+                        ui.add(
+                            AutoCompleteTextEdit::new(
+                                &mut self.account_country,
+                                self.database.account_countries(),
+                            )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
+                        );
                     });
 
                     ComboBox::from_label("Account currency")

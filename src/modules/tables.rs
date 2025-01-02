@@ -317,9 +317,6 @@ impl FundsTable {
             )
                 .expect("Failed to create debit record");
 
-            print!("{:}", record);
-            print!("{:}", self.data_frame);
-
             self.data_frame = self
                 .data_frame
                 .vstack(&record)
@@ -472,6 +469,21 @@ impl EntityTable {
             record.column(format!("{}_subtype", EntityTable::name()).as_str()).unwrap().str().unwrap().get(0).unwrap().to_string()
         )
     }
+
+    /// Returns list of unique countries
+    pub(crate) fn countries(&self) -> Vec<String> {
+        self
+            .data_frame()
+            .column("country")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
 }
 pub struct AccountTable {
     pub data_frame: DataFrame,
@@ -566,5 +578,19 @@ impl AccountTable {
             ).unwrap(),
             record.column("initial_balance").unwrap().f64().unwrap().get(0).unwrap()
         )
+    }
+
+    pub(crate) fn countries(&self) -> Vec<String> {
+        self
+            .data_frame()
+            .column("country")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 }
