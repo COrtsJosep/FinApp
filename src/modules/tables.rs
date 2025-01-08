@@ -158,6 +158,43 @@ impl IncomeTable {
             panic!("Attempted to insert non-income into the income table");
         }
     }
+
+    pub(crate) fn categories(&self) -> Vec<String> {
+        self
+            .data_frame()
+            .column("category")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    pub(crate) fn subcategories(&self, category: String) -> Vec<String> {
+        let mask = self.data_frame()
+            .column("category")
+            .unwrap()
+            .str()
+            .unwrap()
+            .equal(category.as_str());
+
+        self
+            .data_frame()
+            .filter(&mask)
+            .unwrap()
+            .column("subcategory")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
 }
 
 pub struct ExpensesTable {
@@ -233,6 +270,45 @@ impl ExpensesTable {
         } else {
             panic!("Attempted to insert non-expense into the expenses table");
         }
+    }
+
+    pub(crate) fn categories(&self) -> Vec<String> {
+        self
+            .data_frame()
+            .column("category")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .sort(false)
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    pub(crate) fn subcategories(&self, category: String) -> Vec<String> {
+        let mask = self.data_frame()
+            .column("category")
+            .unwrap()
+            .str()
+            .unwrap()
+            .equal(category.as_str());
+
+        self
+            .data_frame()
+            .filter(&mask)
+            .unwrap()
+            .column("subcategory")
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .sort(false)
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
     }
 }
 
@@ -480,6 +556,23 @@ impl EntityTable {
             .unwrap()
             .str()
             .unwrap()
+            .sort(false)
+            .into_no_null_iter()
+            .map(|s| s.to_string())
+            .collect()
+    }
+
+    pub(crate) fn subtypes(&self) -> Vec<String> {
+        // filter type?
+        self
+            .data_frame()
+            .column(format!("{}_subtype", EntityTable::name()).as_str())
+            .unwrap()
+            .unique()
+            .unwrap()
+            .str()
+            .unwrap()
+            .sort(false)
             .into_no_null_iter()
             .map(|s| s.to_string())
             .collect()
@@ -589,6 +682,7 @@ impl AccountTable {
             .unwrap()
             .str()
             .unwrap()
+            .sort(false)
             .into_no_null_iter()
             .map(|s| s.to_string())
             .collect()

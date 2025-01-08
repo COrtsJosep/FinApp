@@ -130,6 +130,26 @@ impl DataBase {
     pub(crate) fn account(&self, account_id: i64) -> Account {
         self.account_table.account(account_id)
     }
+
+    pub(crate) fn transaction_categories(&self, transaction_type: &TransactionType) -> Vec<String> {
+        match transaction_type {
+            TransactionType::Income => self.incomes_table.categories(),
+            TransactionType::Expense => self.expenses_table.categories(),
+            _ => Vec::new() // rethink whether it's the correct thing to do
+        }
+    }
+
+    pub(crate) fn transaction_subcategories(&self, transaction_type: &TransactionType, category: String) -> Vec<String> {
+        match transaction_type {
+            TransactionType::Income => self.incomes_table.subcategories(category),
+            TransactionType::Expense => self.expenses_table.subcategories(category),
+            _ => Vec::new()
+        }
+    }
+    
+    pub(crate) fn entity_subtypes(&self) -> Vec<String> {
+        self.entity_table.subtypes()
+    }
 }
 
 impl Default for DataBase {

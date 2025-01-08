@@ -212,10 +212,22 @@ impl AppState {
                             }
                         });
 
+                    //ui.horizontal(|ui| {
+                    //    let entity_subtype_label = ui.label("Entity subtype: ");
+                    //    ui.text_edit_singleline(&mut self.entity_subtype)
+                    //        .labelled_by(entity_subtype_label.id);
+                    //});
+
                     ui.horizontal(|ui| {
-                        let entity_subtype_label = ui.label("Entity subtype: ");
-                        ui.text_edit_singleline(&mut self.entity_subtype)
-                            .labelled_by(entity_subtype_label.id);
+                        ui.label("Entity subtype: ");
+                        ui.add(
+                            AutoCompleteTextEdit::new(
+                                &mut self.entity_subtype,
+                                self.database.entity_subtypes(),
+                            )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
+                        );
                     });
 
                     if self.are_valid_entity_fields() {
@@ -474,6 +486,7 @@ impl AppState {
                                 }
                             });
 
+                        /*
                         ui.horizontal(|ui| {
                             let transaction_category_label = ui.label("Transaction category: ");
                             ui.text_edit_singleline(&mut self.transaction_category)
@@ -484,6 +497,31 @@ impl AppState {
                                 ui.label("Transaction subcategory: ");
                             ui.text_edit_singleline(&mut self.transaction_subcategory)
                                 .labelled_by(transaction_subcategory_label.id);
+                        });
+                        */
+
+                        ui.horizontal(|ui| {
+                            ui.label("Transaction category: ");
+                            ui.add(
+                                AutoCompleteTextEdit::new(
+                                    &mut self.transaction_category,
+                                    self.database.transaction_categories(&self.transaction_type),
+                                )
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
+                            );
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label("Transaction subcategory: ");
+                            ui.add(
+                                AutoCompleteTextEdit::new(
+                                    &mut self.transaction_subcategory,
+                                    self.database.transaction_subcategories(&self.transaction_type, self.transaction_category.clone()),
+                                )
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
+                            );
                         });
 
                         ui.horizontal(|ui| {
