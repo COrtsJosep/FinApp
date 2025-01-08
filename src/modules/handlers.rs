@@ -212,12 +212,6 @@ impl AppState {
                             }
                         });
 
-                    //ui.horizontal(|ui| {
-                    //    let entity_subtype_label = ui.label("Entity subtype: ");
-                    //    ui.text_edit_singleline(&mut self.entity_subtype)
-                    //        .labelled_by(entity_subtype_label.id);
-                    //});
-
                     ui.horizontal(|ui| {
                         ui.label("Entity subtype: ");
                         ui.add(
@@ -275,11 +269,6 @@ impl AppState {
                         ui.text_edit_singleline(&mut self.account_name)
                             .labelled_by(account_name_label.id);
                     });
-                    //ui.horizontal(|ui| {
-                    //    let account_country_label = ui.label("Account country: ");
-                    //    ui.text_edit_singleline(&mut self.account_country)
-                    //        .labelled_by(account_country_label.id);
-                    //});
 
                     ui.horizontal(|ui| {
                         ui.label("Account country: ");
@@ -485,20 +474,6 @@ impl AppState {
                                     );
                                 }
                             });
-
-                        /*
-                        ui.horizontal(|ui| {
-                            let transaction_category_label = ui.label("Transaction category: ");
-                            ui.text_edit_singleline(&mut self.transaction_category)
-                                .labelled_by(transaction_category_label.id);
-                        });
-                        ui.horizontal(|ui| {
-                            let transaction_subcategory_label =
-                                ui.label("Transaction subcategory: ");
-                            ui.text_edit_singleline(&mut self.transaction_subcategory)
-                                .labelled_by(transaction_subcategory_label.id);
-                        });
-                        */
 
                         ui.horizontal(|ui| {
                             ui.label("Transaction category: ");
