@@ -186,10 +186,7 @@ impl CurrencyExchange {
         currency_to: &Currency,
         date: NaiveDate,
     ) -> f64 {
-        assert!(
-            date <= Local::now().date_naive(),
-            "Tried to get an exchange rate in the future"
-        );
+        if currency_to == currency_from { return 1.0; }
 
         let key: String = CurrencyExchange::key(currency_from, currency_to);
         let inverse_key: String = CurrencyExchange::key(currency_to, currency_from);
