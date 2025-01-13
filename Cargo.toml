@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.38"
-polars = { version = "0.45.0", features = ["lazy", "temporal"] }
+polars = { version = "0.45.0", features = ["lazy", "temporal", "dynamic_group_by", "cum_agg"] }
 eframe = { version = "0.29", features = ["default",
     "default_fonts",
     "glow",
@@ -18,3 +18,4 @@ strum = "0.26"
 strum_macros = "0.26"
 derivative = "2.2.0"
 reqwest = { version = "0.12", features = ["blocking"] }
+plotters = "0.3.7"

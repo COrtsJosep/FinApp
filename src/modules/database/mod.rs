@@ -1,3 +1,5 @@
+pub mod plotter;
+
 use std::vec::IntoIter;
 use crate::modules::financial::*;
 use crate::modules::tables::*;
@@ -10,18 +12,6 @@ pub struct DataBase {
     party_table: PartyTable,
     entity_table: EntityTable,
     account_table: AccountTable,
-}
-
-impl DataBase {
-    pub(crate) fn account_countries(&self) -> Vec<String> {
-        self.account_table.countries()
-    }
-}
-
-impl DataBase {
-    pub(crate) fn entity_countries(&self) -> Vec<String> {
-        self.entity_table.countries()
-    }
 }
 
 impl DataBase {
@@ -102,7 +92,7 @@ impl DataBase {
                 self.account_table.data_frame.height() as i64
             ]
         )
-        .unwrap();
+            .unwrap();
 
         data_frame
     }
@@ -127,8 +117,16 @@ impl DataBase {
         self.account_table.iter()
     }
 
+    pub(crate) fn entity_countries(&self) -> Vec<String> {
+        self.entity_table.countries()
+    }
+
     pub(crate) fn account(&self, account_id: i64) -> Account {
         self.account_table.account(account_id)
+    }
+
+    pub(crate) fn account_countries(&self) -> Vec<String> {
+        self.account_table.countries()
     }
 
     pub(crate) fn transaction_categories(&self, transaction_type: &TransactionType) -> Vec<String> {
@@ -146,7 +144,7 @@ impl DataBase {
             _ => Vec::new()
         }
     }
-    
+
     pub(crate) fn entity_subtypes(&self) -> Vec<String> {
         self.entity_table.subtypes()
     }

@@ -44,7 +44,7 @@ impl CurrencyExchange {
             .lazy()
             .select([
                 col("TIME_PERIOD").alias("date"),
-                (lit(1.0) / col("OBS_VALUE")).alias("value")
+                (lit(1.0) / col("OBS_VALUE")).alias("value") // needed because ECB returns foreign in terms of EUR
             ])
             .collect()
             .expect("Failed to transform and rename");
