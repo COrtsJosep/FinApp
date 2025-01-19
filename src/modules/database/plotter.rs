@@ -1,11 +1,9 @@
-use std::str::FromStr;
 use chrono::NaiveDate;
 use polars::prelude::*;
 use plotters::prelude::*;
 use crate::modules::currency_exchange::CurrencyExchange;
 use crate::modules::database::DataBase;
 use crate::modules::financial::Currency;
-use std::iter::zip;
 
 impl DataBase {
     pub(crate) fn funds_evolution(&self, currency_to: &Currency) -> () {
@@ -21,43 +19,25 @@ impl DataBase {
                 col("currency"),
                 col("creation_date").alias("date")
                 ])
-            .collect()
-            .expect("Failed to select account table");
+            .collect().expect("Failed to select account table");
         
         let mut funds_table: DataFrame = self
             .funds_table
             .data_frame
             .clone()
-            .select(["value", "currency", "date"])
-            .expect("Failed to select funds table");
+            .select(["value", "currency", "date"]).expect("Failed to select funds table");
         
         // First step is getting all fund changes in history, and to those, adding the initial
         // balances of all accounts.
         funds_table = funds_table.vstack(&initial_balances).expect("Could not append new data");
 
-        // Next step is creating a new column with the exchange rates for all necessary dates and 
-        // currencies
-        let mut exchange_rates: Vec<f64> = vec![];
-        let date_iter = funds_table.column("date").unwrap().date().unwrap().as_date_iter();
-        let currency_iter = funds_table.column("currency").unwrap().str().unwrap().into_iter();
-
-        for (date, currency) in zip(date_iter, currency_iter){
-            let date = date.unwrap();
-            let currency_from = Currency::from_str(currency.unwrap()).expect("Could not find currency shortname");
-            let exchange_rate = currency_exchange.exchange(&currency_from, &currency_to, date);
-
-            exchange_rates.push(exchange_rate);
-        }
+        // Next step is converting values into the same currency
+        funds_table = currency_exchange.exchange_currencies(currency_to, funds_table);
         
-        // Final data manipulation step involves adding the exchange rate column to the data_frame,
-        // converting all currencies into the target currency, grouping fund changes per natural
+        // Final data manipulation step involves grouping fund changes per natural
         // day, expanding to all days without movements, and doing the cumsum!
         let result: DataFrame = funds_table
-            .with_column(Series::new("exchange_rate".into(), exchange_rates))
-            .expect("Failed to add exchange_rate column")
-            .clone()
             .lazy()
-            .select([col("date"), (col("exchange_rate") * col("value")).alias("value")])
             .sort(["date"], Default::default())
             .group_by_dynamic(
                 col("date"),

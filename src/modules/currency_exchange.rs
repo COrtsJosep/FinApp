@@ -7,6 +7,8 @@ use std::fs::File;
 use std::io::Cursor;
 use std::string::String;
 use strum::IntoEnumIterator;
+use std::iter::zip;
+use std::str::FromStr;
 
 const BASE_CURRENCY: Currency = Currency::EUR;
 
@@ -44,7 +46,7 @@ impl CurrencyExchange {
             .lazy()
             .select([
                 col("TIME_PERIOD").alias("date"),
-                (lit(1.0) / col("OBS_VALUE")).alias("value") // needed because ECB returns foreign in terms of EUR
+                (lit(1.0) / col("OBS_VALUE")).alias("value"), // needed because ECB returns foreign in terms of EUR
             ])
             .collect()
             .expect("Failed to transform and rename");
@@ -52,7 +54,7 @@ impl CurrencyExchange {
         data_frame.to_owned()
     }
 
-    /// Tries to read the exchange rate table from the expected path. If it's there, it is loaded, 
+    /// Tries to read the exchange rate table from the expected path. If it's there, it is loaded,
     /// and if not up-to-date, it is enhanced with fresh data from the ECB.
     fn load(currency: &Currency) -> Result<DataFrame, String> {
         // could be refactored
@@ -66,11 +68,11 @@ impl CurrencyExchange {
             .map_err(|e| format!("Failed to read {} table: {}", key, e))?
             .finish()
             .map_err(|e| format!("Failed to load {} table: {}", key, e));
-        
+
         if let Err(data_frame) = data_frame {
             return Err(data_frame);
-        } 
-        
+        }
+
         let mut data_frame = data_frame?;
 
         let extremum: Extremum = Extremum::MAX;
@@ -90,7 +92,7 @@ impl CurrencyExchange {
             .upsample::<[String; 0]>([], "date", Duration::parse("1d")).expect("Failed to expand date")
             .fill_null(FillNullStrategy::Forward(None)).expect("Failed to fill null values")
     }
-    
+
     #[cfg(test)]
     pub(crate) fn test_expand(data_frame: &DataFrame) -> DataFrame {
         Self::expand(&data_frame)
@@ -104,12 +106,10 @@ impl CurrencyExchange {
             .as_date_iter();
 
         match extrema {
-            Extremum::MIN => {
-                iterator.min().expect("Min could not be performed").expect("Column has no min")
-            },
-            Extremum::MAX => {
-                iterator.max().expect("Max could not be performed").expect("Column has no max")
-            }
+            Extremum::MIN => iterator
+                .min().expect("Min could not be performed").expect("Column has no min"),
+            Extremum::MAX => iterator
+                .max().expect("Max could not be performed").expect("Column has no max"),
         }
     }
 
@@ -119,8 +119,8 @@ impl CurrencyExchange {
     }
 
     #[cfg(test)]
-    pub(crate) fn new(hash_map: HashMap<String, DataFrame>) -> CurrencyExchange{
-        CurrencyExchange{ hash_map }
+    pub(crate) fn new(hash_map: HashMap<String, DataFrame>) -> CurrencyExchange {
+        CurrencyExchange { hash_map }
     }
 
     /// Initializes the currency exchange module
@@ -129,7 +129,7 @@ impl CurrencyExchange {
 
         for currency in Currency::iter() {
             if currency == BASE_CURRENCY { continue; }
-            
+
             let key: String = CurrencyExchange::key(&currency, &BASE_CURRENCY);
             let mut data_frame: DataFrame = match Self::load(&currency) {
                 Ok(data_frame) => data_frame,
@@ -150,20 +150,19 @@ impl CurrencyExchange {
             data_frame = Self::expand(&mut data_frame);
             hash_map.insert(key, data_frame);
         }
-        
+
         CurrencyExchange { hash_map }
     }
-    
+
     /// Saves the currency exchange tables.
-    pub(crate) fn save(&mut self) -> () {
+    fn save(&mut self) -> () {
         for (key, data_frame) in self.hash_map.iter_mut() {
             if data_frame.is_empty() {
                 return;
             }
 
-            let mut file =
-                File::create(format!("data/exchange_rate_{}.csv", key))
-                    .expect(format!("Could not create file {}_table.csv", key).as_str());
+            let mut file = File::create(format!("data/exchange_rate_{}.csv", key))
+                .expect(format!("Could not create file {}_table.csv", key).as_str());
 
             CsvWriter::new(&mut file)
                 .include_header(true)
@@ -172,7 +171,7 @@ impl CurrencyExchange {
                 .expect(format!("Failed to save {} table.", key).as_str());
         }
     }
-    
+
     /// Creates a key for the currency exchange HashMap (just the concatenation of the currency
     /// names)
     fn key(currency_from: &Currency, currency_to: &Currency) -> String {
@@ -180,20 +179,28 @@ impl CurrencyExchange {
     }
 
     /// Returns the historic exchange rate between two currencies at a given date
-    pub(crate) fn exchange(
+    fn exchange_currency(
         &self,
         currency_from: &Currency,
         currency_to: &Currency,
         date: NaiveDate,
     ) -> f64 {
-        if currency_to == currency_from { return 1.0; }
+        if currency_to == currency_from {
+            return 1.0;
+        }
 
         let key: String = CurrencyExchange::key(currency_from, currency_to);
         let inverse_key: String = CurrencyExchange::key(currency_to, currency_from);
         if self.hash_map.contains_key(&key) {
             let data_frame = self.hash_map.get(&key).unwrap();
-            assert!(Self::extreme_date(data_frame, &Extremum::MIN) <= date, "Tried to get an exchange rate too far away in the past");
-            assert!(date <= Self::extreme_date(data_frame, &Extremum::MAX), "Tried to get an exchange rate too near the present");
+            assert!(
+                Self::extreme_date(data_frame, &Extremum::MIN) <= date,
+                "Tried to get an exchange rate too far away in the past"
+            );
+            assert!(
+                date <= Self::extreme_date(data_frame, &Extremum::MAX),
+                "Tried to get an exchange rate too near the present"
+            );
 
             data_frame
                 .clone()
@@ -203,11 +210,63 @@ impl CurrencyExchange {
                 .column("value").expect("Failed to find column 'value'")
                 .f64().expect("Failed to convert value to float")
                 .get(0).expect("Failed to find observation")
-
-        } else if self.hash_map.contains_key(&inverse_key) {
-            1.0 / self.exchange(currency_to, currency_from, date)
-        } else {
-            self.exchange(currency_from, &BASE_CURRENCY, date) * self.exchange(&BASE_CURRENCY, currency_to, date)
+        } else if self.hash_map.contains_key(&inverse_key) { 
+            1.0 / self.exchange_currency(currency_to, currency_from, date)
+        } else { 
+            self.exchange_currency(currency_from, &BASE_CURRENCY, date) * self.exchange_currency(&BASE_CURRENCY, currency_to, date) 
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_exchange_currency(
+        &self,
+        currency_from: &Currency,
+        currency_to: &Currency,
+        date: NaiveDate,
+    ) -> f64 {
+        self.exchange_currency(currency_from, currency_to, date)
+    }
+
+    /// This function takes a dataframe with columns date, currency, and value, and returns a
+    /// dataframe with the same columns, but the value has been converted to the currency_to
+    pub(crate) fn exchange_currencies(
+        &self,
+        currency_to: &Currency,
+        mut data_frame: DataFrame,
+    ) -> DataFrame {
+        let mut exchange_rates: Vec<f64> = vec![];
+        let date_iter = data_frame
+            .column("date")
+            .unwrap()
+            .date()
+            .unwrap()
+            .as_date_iter();
+        let currency_iter = data_frame
+            .column("currency")
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_iter();
+
+        for (date, currency) in zip(date_iter, currency_iter) {
+            let date = date.unwrap();
+            let currency_from =
+                Currency::from_str(currency.unwrap()).expect("Could not find currency shortname");
+            let exchange_rate = self.exchange_currency(&currency_from, &currency_to, date);
+
+            exchange_rates.push(exchange_rate);
+        }
+
+        data_frame
+            .with_column(Series::new("exchange_rate".into(), exchange_rates))
+            .expect("Failed to add exchange_rate column")
+            .clone()
+            .lazy()
+            .select([
+                col("date"),
+                (col("exchange_rate") * col("value")).alias("value"),
+            ])
+            .collect()
+            .unwrap()
     }
 }

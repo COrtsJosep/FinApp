@@ -82,7 +82,7 @@ mod tests {
         let currency_to: Currency = Currency::EUR;
         let date: NaiveDate = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-        assert_eq!(currency_exchange.exchange(&currency_from, &currency_to, date), 0.5);
+        assert_eq!(currency_exchange.test_exchange_currency(&currency_from, &currency_to, date), 0.5);
     }
 
     #[test]
@@ -93,7 +93,7 @@ mod tests {
         let currency_to: Currency = Currency::CHF;
         let date: NaiveDate = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-        assert_eq!(currency_exchange.exchange(&currency_from, &currency_to, date), 1.0 / 0.5);
+        assert_eq!(currency_exchange.test_exchange_currency(&currency_from, &currency_to, date), 1.0 / 0.5);
     }
     
     #[test]
@@ -104,6 +104,38 @@ mod tests {
         let currency_to: Currency = Currency::SEK;
         let date: NaiveDate = NaiveDate::from_ymd_opt(2020, 1, 1).unwrap();
 
-        assert_eq!(currency_exchange.exchange(&currency_from, &currency_to, date), 0.5 / 1.5);
+        assert_eq!(currency_exchange.test_exchange_currency(&currency_from, &currency_to, date), 0.5 / 1.5);
+    }
+    
+    #[test]
+    fn correct_dataframe_exchange() {
+        let currency_exchange: CurrencyExchange = init_testing_currency_exchange();
+
+        let currency_to: Currency = Currency::EUR;
+        let initial_data_frame: DataFrame = df!(
+            "date" => [
+                NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 3).unwrap(),
+            ],
+            "currency" => ["EUR", "CHF", "SEK"],
+            "value" => [1.0, 1.0, 1.0]
+        ).unwrap();
+        
+        let expected_data_frame: DataFrame = df!(
+            "date" => [
+                NaiveDate::from_ymd_opt(2020, 1, 1).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 2).unwrap(),
+                NaiveDate::from_ymd_opt(2020, 1, 3).unwrap(),
+            ],
+            "value" => [1.0, 1.0, 0.5]            
+        ).unwrap();
+        
+        let actual_data_frame: DataFrame = currency_exchange.exchange_currencies(
+            &currency_to, 
+            initial_data_frame
+        );
+        
+        assert!(expected_data_frame.equals(&actual_data_frame))
     }
 }
