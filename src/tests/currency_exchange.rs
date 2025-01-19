@@ -59,7 +59,7 @@ mod tests {
             ],
             "value" => [57.9, 72.5, 83.1]
         ).unwrap();
-        data_frame = CurrencyExchange::test_expand(&data_frame);
+        data_frame = CurrencyExchange::test_expand(&data_frame, false);
         
         let expanded_data_frame = df!(
             "date" => [

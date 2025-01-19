@@ -18,6 +18,7 @@ pub enum Extremum {
 }
 
 pub struct CurrencyExchange {
+    hash_map_raw: HashMap<String, DataFrame>,
     hash_map: HashMap<String, DataFrame>,
 }
 
@@ -86,16 +87,30 @@ impl CurrencyExchange {
     }
 
     /// Adds any missing days and fills them with a forward rolling strategy.
-    fn expand(data_frame: &DataFrame) -> DataFrame {
+    fn expand(original_data_frame: &DataFrame, add_today: bool) -> DataFrame {
+        let mut data_frame: DataFrame = original_data_frame.clone();
+        
+        if add_today {
+            let extremum: Extremum = Extremum::MAX;
+            if Self::extreme_date(&data_frame, &extremum) < Local::now().date_naive() {
+                let extra_row: DataFrame = df!(
+                        "date" => [Local::now().date_naive()],
+                        "value" => [None::<f64>]
+                    )
+                    .unwrap();
+    
+                data_frame = data_frame.vstack(&extra_row).unwrap();
+            }
+        }
+        
         data_frame
-            .clone()
             .upsample::<[String; 0]>([], "date", Duration::parse("1d")).expect("Failed to expand date")
             .fill_null(FillNullStrategy::Forward(None)).expect("Failed to fill null values")
     }
 
     #[cfg(test)]
-    pub(crate) fn test_expand(data_frame: &DataFrame) -> DataFrame {
-        Self::expand(&data_frame)
+    pub(crate) fn test_expand(data_frame: &DataFrame, add_today: bool) -> DataFrame {
+        Self::expand(&data_frame, add_today)
     }
 
     /// Returns the most recent date of the dataframe's column "date"
@@ -119,44 +134,45 @@ impl CurrencyExchange {
     }
 
     #[cfg(test)]
-    pub(crate) fn new(hash_map: HashMap<String, DataFrame>) -> CurrencyExchange {
-        CurrencyExchange { hash_map }
+    pub(crate) fn new(hash_map_raw: HashMap<String, DataFrame>) -> CurrencyExchange {
+        let mut hash_map: HashMap<String, DataFrame> = HashMap::new();
+        for (key, data_frame) in hash_map_raw.iter() {
+            hash_map.insert(key.to_owned(), Self::expand(data_frame, true));
+        }
+        CurrencyExchange { hash_map_raw, hash_map }
     }
 
     /// Initializes the currency exchange module
     pub(crate) fn init() -> CurrencyExchange {
+        let mut hash_map_raw: HashMap<String, DataFrame> = HashMap::new();
         let mut hash_map: HashMap<String, DataFrame> = HashMap::new();
 
         for currency in Currency::iter() {
             if currency == BASE_CURRENCY { continue; }
 
             let key: String = CurrencyExchange::key(&currency, &BASE_CURRENCY);
-            let mut data_frame: DataFrame = match Self::load(&currency) {
+            let data_frame: DataFrame = match Self::load(&currency) {
                 Ok(data_frame) => data_frame,
                 Err(_err) => Self::download(&currency, None),
             };
 
-            let extremum: Extremum = Extremum::MAX;
-            if Self::extreme_date(&data_frame, &extremum) < Local::now().date_naive() {
-                let extra_row: DataFrame = df!(
-                    "date" => [Local::now().date_naive()],
-                    "value" => [None::<f64>]
-                )
-                .unwrap();
+            let mut expanded_data_frame: DataFrame = data_frame.clone();
+            expanded_data_frame = Self::expand(&mut expanded_data_frame, true);
 
-                data_frame = data_frame.vstack(&extra_row).unwrap();
-            }
-
-            data_frame = Self::expand(&mut data_frame);
-            hash_map.insert(key, data_frame);
+            let key_raw = key.clone();
+            hash_map_raw.insert(key_raw, data_frame);
+            hash_map.insert(key, expanded_data_frame);
         }
 
-        CurrencyExchange { hash_map }
+        let mut currency_exchange = CurrencyExchange { hash_map_raw, hash_map };
+        currency_exchange.save();
+
+        currency_exchange
     }
 
     /// Saves the currency exchange tables.
     fn save(&mut self) -> () {
-        for (key, data_frame) in self.hash_map.iter_mut() {
+        for (key, data_frame) in self.hash_map_raw.iter_mut() {
             if data_frame.is_empty() {
                 return;
             }
@@ -210,7 +226,7 @@ impl CurrencyExchange {
                 .column("value").expect("Failed to find column 'value'")
                 .f64().expect("Failed to convert value to float")
                 .get(0).expect("Failed to find observation")
-        } else if self.hash_map.contains_key(&inverse_key) { 
+        } else if self.hash_map.contains_key(&inverse_key) {
             1.0 / self.exchange_currency(currency_to, currency_from, date)
         } else { 
             self.exchange_currency(currency_from, &BASE_CURRENCY, date) * self.exchange_currency(&BASE_CURRENCY, currency_to, date) 
@@ -236,16 +252,12 @@ impl CurrencyExchange {
     ) -> DataFrame {
         let mut exchange_rates: Vec<f64> = vec![];
         let date_iter = data_frame
-            .column("date")
-            .unwrap()
-            .date()
-            .unwrap()
+            .column("date").unwrap()
+            .date().unwrap()
             .as_date_iter();
         let currency_iter = data_frame
-            .column("currency")
-            .unwrap()
-            .str()
-            .unwrap()
+            .column("currency").unwrap()
+            .str().unwrap()
             .into_iter();
 
         for (date, currency) in zip(date_iter, currency_iter) {
