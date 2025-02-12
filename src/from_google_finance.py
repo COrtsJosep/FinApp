@@ -1,3 +1,4 @@
+import datetime
 import polars as pl
 from pathlib import Path
 
@@ -65,3 +66,8 @@ income_id_series = pl.Series('income_id', range(income_df.shape[0]))
     .select(income_colnames)
     .write_csv(data_path / 'income_table.csv')
 )
+
+### creation of party table
+date = datetime.datetime.now().strftime('%Y-%m-%d')
+with open(data_path / 'party_table_test.csv', 'w') as file:
+    file.write(f'party_id,creation_date\n0,{date}')
