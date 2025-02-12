@@ -1,7 +1,8 @@
 use super::financial::{Account, AccountType, Currency, Entity, EntityType, Party, Transaction};
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
-use std::fs::File;
+use std::fs::{create_dir, File};
+use std::path::Path;
 use std::str::FromStr;
 use std::vec::IntoIter;
 
@@ -46,9 +47,14 @@ pub trait Table {
             return;
         }
 
-        let mut file =
-            File::create(format!("data/{}_table.csv", Self::name()))
-                .expect(format!("Could not create file {}_table.csv", Self::name()).as_str());
+        let file_name: String = format!("data/{}_table.csv", Self::name());
+        let path: &Path = Path::new(&file_name);
+        if !path.parent().expect("path does not have parent").exists() {
+            create_dir(path.parent().expect("path does not have parents"));
+        }
+
+        let mut file = File::create(path)
+            .expect(format!("Could not create file {}_table.csv", Self::name()).as_str());
 
         CsvWriter::new(&mut file)
             .include_header(true)
@@ -107,16 +113,38 @@ impl Table for IncomeTable {
 
     fn new() -> Box<Self> {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from(format!("{}_id", IncomeTable::name())), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from(format!("{}_id", IncomeTable::name())),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
-            .expect(format!("Failed to initialize empty {} table", IncomeTable::name()).as_str());
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("category"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("subcategory"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("description"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_id"),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new())),
+        ])
+        .expect(format!("Failed to initialize empty {} table", IncomeTable::name()).as_str());
 
         IncomeTable::create(data_frame)
     }
@@ -148,7 +176,7 @@ impl IncomeTable {
                     "entity_id" => [*entity_id],
                     "party_id" => [party_id]
             )
-                .expect(format!("Failed to create {} record", IncomeTable::name()).as_str());
+            .expect(format!("Failed to create {} record", IncomeTable::name()).as_str());
 
             self.data_frame = self
                 .data_frame()
@@ -160,8 +188,7 @@ impl IncomeTable {
     }
 
     pub(crate) fn categories(&self) -> Vec<String> {
-        self
-            .data_frame()
+        self.data_frame()
             .column("category")
             .unwrap()
             .unique()
@@ -174,15 +201,15 @@ impl IncomeTable {
     }
 
     pub(crate) fn subcategories(&self, category: String) -> Vec<String> {
-        let mask = self.data_frame()
+        let mask = self
+            .data_frame()
             .column("category")
             .unwrap()
             .str()
             .unwrap()
             .equal(category.as_str());
 
-        self
-            .data_frame()
+        self.data_frame()
             .filter(&mask)
             .unwrap()
             .column("subcategory")
@@ -220,16 +247,38 @@ impl Table for ExpensesTable {
 
     fn new() -> Box<Self> {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from("expense_id"), Vec::<i64>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from("expense_id"),
+                Vec::<i64>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("category"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("subcategory"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("description"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("entity_id"), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
-            .expect("Failed to initialize empty expenses table");
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("category"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("subcategory"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("description"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("entity_id"),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new())),
+        ])
+        .expect("Failed to initialize empty expenses table");
 
         ExpensesTable::create(data_frame)
     }
@@ -261,7 +310,7 @@ impl ExpensesTable {
                 "entity_id" => [*entity_id],
                 "party_id" => [party_id]
             )
-                .expect(format!("Failed to create {} record", ExpensesTable::name()).as_str());
+            .expect(format!("Failed to create {} record", ExpensesTable::name()).as_str());
 
             self.data_frame = self
                 .data_frame
@@ -273,8 +322,7 @@ impl ExpensesTable {
     }
 
     pub(crate) fn categories(&self) -> Vec<String> {
-        self
-            .data_frame()
+        self.data_frame()
             .column("category")
             .unwrap()
             .unique()
@@ -288,15 +336,15 @@ impl ExpensesTable {
     }
 
     pub(crate) fn subcategories(&self, category: String) -> Vec<String> {
-        let mask = self.data_frame()
+        let mask = self
+            .data_frame()
             .column("category")
             .unwrap()
             .str()
             .unwrap()
             .equal(category.as_str());
 
-        self
-            .data_frame()
+        self.data_frame()
             .filter(&mask)
             .unwrap()
             .column("subcategory")
@@ -335,14 +383,30 @@ impl Table for FundsTable {
 
     fn new() -> Box<Self> {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from(format!("{}_id", FundsTable::name())), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from(format!("{}_type", FundsTable::name())), Vec::<String>::new())),
+            Column::from(Series::new(
+                PlSmallStr::from(format!("{}_id", FundsTable::name())),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from(format!("{}_type", FundsTable::name())),
+                Vec::<String>::new(),
+            )),
             Column::from(Series::new(PlSmallStr::from("value"), Vec::<f64>::new())),
-            Column::from(Series::new(PlSmallStr::from("currency"), Vec::<String>::new())),
-            Column::from(Series::new(PlSmallStr::from("date"), Vec::<NaiveDate>::new())),
-            Column::from(Series::new(PlSmallStr::from("account_id"), Vec::<i64>::new())), 
-            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new()))])
-            .expect(format!("Failed to initialize empty {} table", FundsTable::name()).as_str());
+            Column::from(Series::new(
+                PlSmallStr::from("currency"),
+                Vec::<String>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("date"),
+                Vec::<NaiveDate>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("account_id"),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(PlSmallStr::from("party_id"), Vec::<i64>::new())),
+        ])
+        .expect(format!("Failed to initialize empty {} table", FundsTable::name()).as_str());
 
         FundsTable::create(data_frame)
     }
@@ -369,7 +433,7 @@ impl FundsTable {
                 "account_id" => [*account_id],
                 "party_id" => [party_id]
             )
-                .expect("Failed to create credit record");
+            .expect("Failed to create credit record");
 
             self.data_frame = self
                 .data_frame
@@ -391,17 +455,22 @@ impl FundsTable {
                 "account_id" => [*account_id],
                 "party_id" => [party_id]
             )
-                .expect("Failed to create debit record");
+            .expect("Failed to create debit record");
 
             self.data_frame = self
                 .data_frame
                 .vstack(&record)
                 .expect("Failed to insert debit record")
         } else {
-            panic!("{}", format!("Attempted to insert non-{} into the {} table",
-                                 FundsTable::name(),
-                                 FundsTable::name()
-            ).as_str());
+            panic!(
+                "{}",
+                format!(
+                    "Attempted to insert non-{} into the {} table",
+                    FundsTable::name(),
+                    FundsTable::name()
+                )
+                .as_str()
+            );
         }
     }
 }
@@ -429,9 +498,16 @@ impl Table for PartyTable {
 
     fn new() -> Box<Self> {
         let data_frame = DataFrame::new(vec![
-            Column::from(Series::new(PlSmallStr::from(format!("{}_id", PartyTable::name())), Vec::<i64>::new())),
-            Column::from(Series::new(PlSmallStr::from("creation_date"), Vec::<NaiveDate>::new()))])
-            .expect(format!("Failed to initialize empty {} table", PartyTable::name()).as_str());
+            Column::from(Series::new(
+                PlSmallStr::from(format!("{}_id", PartyTable::name())),
+                Vec::<i64>::new(),
+            )),
+            Column::from(Series::new(
+                PlSmallStr::from("creation_date"),
+                Vec::<NaiveDate>::new(),
+            )),
+        ])
+        .expect(format!("Failed to initialize empty {} table", PartyTable::name()).as_str());
 
         PartyTable::create(data_frame)
     }
@@ -446,7 +522,7 @@ impl PartyTable {
             format!("{}_id", PartyTable::name()) => [id],
             "creation_date" => [party.creation_date]
         )
-            .expect(format!("Failed to create {} record", PartyTable::name()).as_str());
+        .expect(format!("Failed to create {} record", PartyTable::name()).as_str());
 
         self.data_frame = self
             .data_frame
@@ -484,7 +560,7 @@ impl Table for EntityTable {
             format!("{}_type", EntityTable::name()) => [EntityType::default().to_string()],
             format!("{}_subtype", EntityTable::name()) => [""],
             "creation_date" => [Local::now().date_naive()])
-            .expect(format!("Failed to initialize empty {} table", EntityTable::name()).as_str());
+        .expect(format!("Failed to initialize empty {} table", EntityTable::name()).as_str());
 
         EntityTable::create(data_frame)
     }
@@ -493,8 +569,7 @@ impl Table for EntityTable {
 impl EntityTable {
     /// Iterator over IDs
     pub(crate) fn iter(&self) -> IntoIter<i64> {
-        self
-            .data_frame
+        self.data_frame
             .column(format!("{}_id", EntityTable::name()).as_str())
             .unwrap()
             .i64()
@@ -524,10 +599,10 @@ impl EntityTable {
             .expect(format!("Failed to insert {} record", EntityTable::name()).as_str())
     }
 
-
     /// Returns entity given ID
     pub(crate) fn entity(&self, id: i64) -> Entity {
-        let mask = self.data_frame
+        let mask = self
+            .data_frame
             .column(format!("{}_id", EntityTable::name()).as_str())
             .unwrap()
             .i64()
@@ -537,19 +612,46 @@ impl EntityTable {
         let record = self.data_frame.filter(&mask).unwrap();
 
         Entity::new(
-            record.column("name").unwrap().str().unwrap().get(0).unwrap().to_string(),
-            record.column("country").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            record
+                .column("name")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            record
+                .column("country")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
             EntityType::from_str(
-                record.column(format!("{}_type", EntityTable::name()).as_str()).unwrap().str().unwrap().get(0).unwrap()
-            ).unwrap(),
-            record.column(format!("{}_subtype", EntityTable::name()).as_str()).unwrap().str().unwrap().get(0).unwrap().to_string()
+                record
+                    .column(format!("{}_type", EntityTable::name()).as_str())
+                    .unwrap()
+                    .str()
+                    .unwrap()
+                    .get(0)
+                    .unwrap(),
+            )
+            .unwrap(),
+            record
+                .column(format!("{}_subtype", EntityTable::name()).as_str())
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
         )
     }
 
     /// Returns list of unique countries
     pub(crate) fn countries(&self) -> Vec<String> {
-        self
-            .data_frame()
+        self.data_frame()
             .column("country")
             .unwrap()
             .unique()
@@ -564,8 +666,7 @@ impl EntityTable {
 
     pub(crate) fn subtypes(&self) -> Vec<String> {
         // filter type?
-        self
-            .data_frame()
+        self.data_frame()
             .column(format!("{}_subtype", EntityTable::name()).as_str())
             .unwrap()
             .unique()
@@ -608,8 +709,8 @@ impl Table for AccountTable {
             format!("{}_type", AccountTable::name()) => [AccountType::default().to_string()],
             "initial_balance" => [0.0f64],
             "creation_date" => [Local::now().date_naive()])
-            .expect(format!("Failed to initialize empty {} table", AccountTable::name()).as_str());
-        
+        .expect(format!("Failed to initialize empty {} table", AccountTable::name()).as_str());
+
         AccountTable::create(data_frame)
     }
 }
@@ -617,8 +718,7 @@ impl Table for AccountTable {
 impl AccountTable {
     /// Iterator over IDs
     pub(crate) fn iter(&self) -> IntoIter<i64> {
-        self
-            .data_frame
+        self.data_frame
             .column(format!("{}_id", AccountTable::name()).as_str())
             .unwrap()
             .i64()
@@ -651,7 +751,8 @@ impl AccountTable {
 
     /// Retrieves account from the table, given ID
     pub(crate) fn account(&self, id: i64) -> Account {
-        let mask = self.data_frame
+        let mask = self
+            .data_frame
             .column(format!("{}_id", AccountTable::name()).as_str())
             .unwrap()
             .i64()
@@ -661,21 +762,54 @@ impl AccountTable {
         let record = self.data_frame.filter(&mask).unwrap();
 
         Account::new(
-            record.column("name").unwrap().str().unwrap().get(0).unwrap().to_string(),
-            record.column("country").unwrap().str().unwrap().get(0).unwrap().to_string(),
+            record
+                .column("name")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            record
+                .column("country")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
             Currency::from_str(
-                record.column("currency").unwrap().str().unwrap().get(0).unwrap()
-            ).unwrap(),
+                record
+                    .column("currency")
+                    .unwrap()
+                    .str()
+                    .unwrap()
+                    .get(0)
+                    .unwrap(),
+            )
+            .unwrap(),
             AccountType::from_str(
-                record.column(format!("{}_type", AccountTable::name()).as_str()).unwrap().str().unwrap().get(0).unwrap()
-            ).unwrap(),
-            record.column("initial_balance").unwrap().f64().unwrap().get(0).unwrap()
+                record
+                    .column(format!("{}_type", AccountTable::name()).as_str())
+                    .unwrap()
+                    .str()
+                    .unwrap()
+                    .get(0)
+                    .unwrap(),
+            )
+            .unwrap(),
+            record
+                .column("initial_balance")
+                .unwrap()
+                .f64()
+                .unwrap()
+                .get(0)
+                .unwrap(),
         )
     }
 
     pub(crate) fn countries(&self) -> Vec<String> {
-        self
-            .data_frame()
+        self.data_frame()
             .column("country")
             .unwrap()
             .unique()
