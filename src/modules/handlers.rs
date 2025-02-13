@@ -121,14 +121,18 @@ impl AppState {
         (self.entity_name.len() > 0) & (self.entity_country.len() > 0)
     }
 
-    fn are_valid_account_fields(&self) -> bool {
+    fn is_valid_initial_balance(&self) -> bool {
         let parsing_result = self.account_initial_balance_tentative.parse::<f64>();
-        let valid_initial_balance: bool = match parsing_result {
+        match parsing_result {
             Ok(_value) => true,
             Err(_e) => false,
-        };
+        }
+    }
 
-        (self.account_name.len() > 0) & (self.account_country.len() > 0) & valid_initial_balance
+    fn are_valid_account_fields(&self) -> bool {
+        (self.account_name.len() > 0)
+            & (self.account_country.len() > 0)
+            & self.is_valid_initial_balance()
     }
 
     fn is_valid_transaction_value(&self) -> bool {
@@ -208,17 +212,20 @@ impl AppState {
                             .highlight_matches(true),
                         );
                     });
-                    ComboBox::from_label("Entity type")
-                        .selected_text(format!("{}", self.entity_type))
-                        .show_ui(ui, |ui| {
-                            for possible_entity_type in EntityType::iter() {
-                                ui.selectable_value(
-                                    &mut self.entity_type,
-                                    possible_entity_type.clone(),
-                                    format!("{possible_entity_type}"),
-                                );
-                            }
-                        });
+                    ui.horizontal(|ui| {
+                        ui.label("Entity type: ");
+                        ComboBox::from_id_salt("Entity type")
+                            .selected_text(format!("{}", self.entity_type))
+                            .show_ui(ui, |ui| {
+                                for possible_entity_type in EntityType::iter() {
+                                    ui.selectable_value(
+                                        &mut self.entity_type,
+                                        possible_entity_type.clone(),
+                                        format!("{possible_entity_type}"),
+                                    );
+                                }
+                            });
+                    });
 
                     ui.horizontal(|ui| {
                         ui.label("Entity subtype: ");
@@ -290,34 +297,53 @@ impl AppState {
                         );
                     });
 
-                    ComboBox::from_label("Account currency")
-                        .selected_text(format!("{}", self.account_currency))
-                        .show_ui(ui, |ui| {
-                            for possible_account_currency in Currency::iter() {
-                                ui.selectable_value(
-                                    &mut self.account_currency,
-                                    possible_account_currency.clone(),
-                                    format!("{possible_account_currency}"),
-                                );
-                            }
-                        });
+                    ui.horizontal(|ui| {
+                        ui.label("Account currency: ");
+                        ComboBox::from_id_salt("Account currency")
+                            .selected_text(format!("{}", self.account_currency))
+                            .show_ui(ui, |ui| {
+                                for possible_account_currency in Currency::iter() {
+                                    ui.selectable_value(
+                                        &mut self.account_currency,
+                                        possible_account_currency.clone(),
+                                        format!("{possible_account_currency}"),
+                                    );
+                                }
+                            });
+                    });
 
-                    ComboBox::from_label("Account type")
-                        .selected_text(format!("{}", self.account_type))
-                        .show_ui(ui, |ui| {
-                            for possible_account_type in AccountType::iter() {
-                                ui.selectable_value(
-                                    &mut self.account_type,
-                                    possible_account_type.clone(),
-                                    format!("{possible_account_type}"),
-                                );
-                            }
-                        });
+                    ui.horizontal(|ui| {
+                        ui.label("Account type: ");
+
+                        ComboBox::from_id_salt("Account type")
+                            .selected_text(format!("{}", self.account_type))
+                            .show_ui(ui, |ui| {
+                                for possible_account_type in AccountType::iter() {
+                                    ui.selectable_value(
+                                        &mut self.account_type,
+                                        possible_account_type.clone(),
+                                        format!("{possible_account_type}"),
+                                    );
+                                }
+                            });
+                    });
 
                     ui.horizontal(|ui| {
                         let account_initial_balance_label = ui.label("Account initial balance: ");
                         ui.text_edit_singleline(&mut self.account_initial_balance_tentative)
                             .labelled_by(account_initial_balance_label.id);
+
+                        if self.is_valid_initial_balance() {
+                            ui.colored_label(
+                                Color32::from_rgb(110, 255, 110),
+                                "Valid initial balance!",
+                            );
+                        } else {
+                            ui.colored_label(
+                                Color32::from_rgb(255, 0, 0),
+                                "Invalid initial balance!",
+                            );
+                        }
                     });
 
                     if self.are_valid_account_fields() {
@@ -438,19 +464,23 @@ impl AppState {
                         }
                     });
 
-                    ComboBox::from_label("Transaction currency")
-                        .selected_text(format!("{}", self.transaction_currency))
-                        .show_ui(ui, |ui| {
-                            for possible_transaction_currency in Currency::iter() {
-                                ui.selectable_value(
-                                    &mut self.transaction_currency,
-                                    possible_transaction_currency.clone(),
-                                    format!("{possible_transaction_currency}"),
-                                );
-                            }
-                        });
+                    ui.horizontal(|ui| {
+                        ui.label("Transaction currency: ");
+                        ComboBox::from_id_salt("Transaction currency")
+                            .selected_text(format!("{}", self.transaction_currency))
+                            .show_ui(ui, |ui| {
+                                for possible_transaction_currency in Currency::iter() {
+                                    ui.selectable_value(
+                                        &mut self.transaction_currency,
+                                        possible_transaction_currency.clone(),
+                                        format!("{possible_transaction_currency}"),
+                                    );
+                                }
+                            });
+                    });
 
                     ui.horizontal(|ui| {
+                        ui.label("Transaction date: ");
                         ui.add(DatePickerButton::new(&mut self.transaction_date));
                         if ui.button("Today").clicked() {
                             self.transaction_date = Local::now().date_naive();
@@ -459,33 +489,42 @@ impl AppState {
                     });
 
                     if self.transaction_type.is_fund_change() {
-                        ComboBox::from_label("Transaction account")
-                            .selected_text(format!("{}", self.transaction_account_string))
-                            .show_ui(ui, |ui| {
-                                for account_id in self.database.iter_account_ids() {
-                                    ui.selectable_value(
-                                        &mut self.transaction_account_id,
-                                        account_id,
-                                        format!(
-                                            "{:}",
-                                            self.database.account(account_id).to_string()
-                                        ),
-                                    );
-                                }
-                            });
+                        ui.horizontal(|ui| {
+                            ui.label("Transaction account: ");
+                            ComboBox::from_id_salt("Transaction account")
+                                .selected_text(format!("{}", self.transaction_account_string))
+                                .show_ui(ui, |ui| {
+                                    for account_id in self.database.iter_account_ids() {
+                                        ui.selectable_value(
+                                            &mut self.transaction_account_id,
+                                            account_id,
+                                            format!(
+                                                "{:}",
+                                                self.database.account(account_id).to_string()
+                                            ),
+                                        );
+                                    }
+                                });
+                        });
                     } else {
                         // it is not fund change
-                        ComboBox::from_label("Transaction entity")
-                            .selected_text(format!("{}", self.transaction_entity_string))
-                            .show_ui(ui, |ui| {
-                                for entity_id in self.database.iter_entity_ids() {
-                                    ui.selectable_value(
-                                        &mut self.transaction_entity_id,
-                                        entity_id,
-                                        format!("{:}", self.database.entity(entity_id).to_string()),
-                                    );
-                                }
-                            });
+                        ui.horizontal(|ui| {
+                            ui.label("Transaction entity: ");
+                            ComboBox::from_id_salt("Transaction entity")
+                                .selected_text(format!("{}", self.transaction_entity_string))
+                                .show_ui(ui, |ui| {
+                                    for entity_id in self.database.iter_entity_ids() {
+                                        ui.selectable_value(
+                                            &mut self.transaction_entity_id,
+                                            entity_id,
+                                            format!(
+                                                "{:}",
+                                                self.database.entity(entity_id).to_string()
+                                            ),
+                                        );
+                                    }
+                                });
+                        });
 
                         ui.horizontal(|ui| {
                             ui.label("Transaction category: ");
