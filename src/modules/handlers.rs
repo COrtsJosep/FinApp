@@ -1,12 +1,14 @@
-use derivative::*;
+use crate::modules::currency_exchange;
+use crate::modules::currency_exchange::*;
 use crate::modules::database::*;
 use crate::modules::financial::*;
 use chrono::{Local, NaiveDate};
+use derivative::*;
 use eframe::egui;
-use eframe::egui::ComboBox;
+use eframe::egui::{Color32, ComboBox};
+use egui_autocomplete::AutoCompleteTextEdit;
 use egui_extras::*;
 use strum::IntoEnumIterator;
-use egui_autocomplete::AutoCompleteTextEdit;
 
 const WINDOW_WIDTH: f32 = 600.0;
 const WINDOW_HEIGHT: f32 = 400.0;
@@ -27,7 +29,7 @@ pub struct AppState {
     entity_country: String,
     entity_type: EntityType,
     entity_subtype: String,
-    
+
     account_name: String,
     account_country: String,
     account_currency: Currency,
@@ -40,7 +42,7 @@ pub struct AppState {
     transaction_value: f64,
     transaction_value_tentative: String,
     transaction_currency: Currency,
-    #[derivative(Default(value="Local::now().date_naive()"))]
+    #[derivative(Default(value = "Local::now().date_naive()"))]
     transaction_date: NaiveDate,
     transaction_category: String,
     transaction_subcategory: String,
@@ -86,7 +88,11 @@ impl eframe::App for AppState {
         }
 
         if self.show_plotting_window {
-            // todo
+            //let mut currency_exchange: CurrencyExchange = CurrencyExchange::init();
+            //currency_exchange.save();
+            self.database.monthly_expenses(&Currency::EUR);
+            panic!("Stop this madness")
+            // todo!()
         }
     }
 }
@@ -125,15 +131,17 @@ impl AppState {
         (self.account_name.len() > 0) & (self.account_country.len() > 0) & valid_initial_balance
     }
 
-    fn are_valid_transaction_fields(&self) -> bool {
+    fn is_valid_transaction_value(&self) -> bool {
         let parsing_result = self.transaction_value_tentative.parse::<f64>();
-        let valid_transaction_value: bool = match parsing_result {
+        match parsing_result {
             Ok(_value) => true,
             Err(_e) => false,
-        };
+        }
+    }
 
+    fn are_valid_transaction_fields(&self) -> bool {
         ((self.transaction_category.len() > 0) | self.transaction_type.is_fund_change())
-            & valid_transaction_value
+            & self.is_valid_transaction_value()
     }
 
     pub fn handle_show_input_window(&mut self, ctx: &egui::Context) -> () {
@@ -193,11 +201,11 @@ impl AppState {
                         ui.label("Entity country: ");
                         ui.add(
                             AutoCompleteTextEdit::new(
-                                &mut self.entity_country, 
+                                &mut self.entity_country,
                                 self.database.entity_countries(),
                             )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                            .max_suggestions(10)
+                            .highlight_matches(true),
                         );
                     });
                     ComboBox::from_label("Entity type")
@@ -219,8 +227,8 @@ impl AppState {
                                 &mut self.entity_subtype,
                                 self.database.entity_subtypes(),
                             )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                            .max_suggestions(10)
+                            .highlight_matches(true),
                         );
                     });
 
@@ -277,8 +285,8 @@ impl AppState {
                                 &mut self.account_country,
                                 self.database.account_countries(),
                             )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                            .max_suggestions(10)
+                            .highlight_matches(true),
                         );
                     });
 
@@ -380,14 +388,10 @@ impl AppState {
                 }
             },
         );
-
-        
     }
     pub fn handle_show_input_transaction_window(&mut self, ctx: &egui::Context) -> () {
-        self.transaction_entity_string = self
-            .database
-            .entity(self.transaction_entity_id)
-            .to_string();
+        self.transaction_entity_string =
+            self.database.entity(self.transaction_entity_id).to_string();
         self.transaction_account_string = self
             .database
             .account(self.transaction_account_id)
@@ -421,6 +425,17 @@ impl AppState {
                         let transaction_value_label = ui.label("Transaction value: ");
                         ui.text_edit_singleline(&mut self.transaction_value_tentative)
                             .labelled_by(transaction_value_label.id);
+                        if self.is_valid_transaction_value() {
+                            ui.colored_label(
+                                Color32::from_rgb(110, 255, 110),
+                                "Valid transaction value!",
+                            );
+                        } else {
+                            ui.colored_label(
+                                Color32::from_rgb(255, 0, 0),
+                                "Invalid transaction value!",
+                            );
+                        }
                     });
 
                     ComboBox::from_label("Transaction currency")
@@ -467,10 +482,7 @@ impl AppState {
                                     ui.selectable_value(
                                         &mut self.transaction_entity_id,
                                         entity_id,
-                                        format!(
-                                            "{:}",
-                                            self.database.entity(entity_id).to_string()
-                                        ),
+                                        format!("{:}", self.database.entity(entity_id).to_string()),
                                     );
                                 }
                             });
@@ -482,8 +494,8 @@ impl AppState {
                                     &mut self.transaction_category,
                                     self.database.transaction_categories(&self.transaction_type),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                         });
 
@@ -492,10 +504,13 @@ impl AppState {
                             ui.add(
                                 AutoCompleteTextEdit::new(
                                     &mut self.transaction_subcategory,
-                                    self.database.transaction_subcategories(&self.transaction_type, self.transaction_category.clone()),
+                                    self.database.transaction_subcategories(
+                                        &self.transaction_type,
+                                        self.transaction_category.clone(),
+                                    ),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                         });
 
