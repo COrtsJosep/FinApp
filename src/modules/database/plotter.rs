@@ -95,4 +95,78 @@ impl DataBase {
         root.present().expect("Failed to present plot");
         println!("Plot saved to 'line_plot.png'");
     }
+
+    pub(crate) fn monthly_expenses(&self, currency_to: &Currency) -> () {
+        let currency_exchange: CurrencyExchange = CurrencyExchange::init();
+
+        let mut data_frame: DataFrame = self
+            .expenses_table
+            .data_frame
+            .clone()
+            .select(["value", "currency", "date"]).expect("Failed to select funds table");
+
+        data_frame = currency_exchange
+            .exchange_currencies(currency_to, data_frame)
+            .lazy()
+            .sort(["date"], Default::default())
+            .group_by_dynamic(
+                col("date"),
+                [],
+                DynamicGroupOptions {
+                    every: Duration::parse("1m"),
+                    period: Duration::parse("1m"),
+                    offset: Duration::parse("0"),
+                    ..Default::default()
+                },
+            )
+            .agg([col("value").sum()])
+            .collect().expect("Failed to aggregate by month");
+            
+        print!("{}", &data_frame);
+
+        let dates: Vec<String> = data_frame
+            .column("date").unwrap()
+            .date().unwrap()
+            .as_date_iter()
+            .map(|date| date.unwrap().to_string())
+            .collect();
+
+        let values: Vec<f64> = data_frame
+            .column("value").unwrap()
+            .f64().unwrap()
+            .into_iter()
+            .map(|v| v.unwrap())
+            .collect();
+
+        // Create a drawing area
+        let root = BitMapBackend::new("figures/monthly_expenses.png", (800, 600)).into_drawing_area();
+        root.fill(&WHITE).unwrap();
+
+        // Set up the chart with floating-point y-axis
+        let mut chart = ChartBuilder::on(&root)
+            .caption("Monthly Values", ("sans-serif", 40))
+            .margin(10)
+            .x_label_area_size(30)
+            .y_label_area_size(40)
+            .build_cartesian_2d(0..(dates.len()-1), 0.0..values.iter().cloned().fold(0.0 / 0.0, f64::max))
+            .unwrap();
+
+        chart.configure_mesh()
+            .x_labels(dates.len())
+            .x_label_formatter(&|x| dates[*x].clone())
+            .y_desc("Value")
+            .x_desc("Month")
+            .draw()
+            .unwrap();
+
+        // Draw bars with floating-point heights
+        chart.draw_series(
+            values.iter().enumerate().map(|(idx, &val)| {
+                Rectangle::new(
+                    [(idx, 0.0), (idx + 1, val)], // Use f64 for heights
+                    BLUE.filled(),
+                )
+            }),
+        ).unwrap();
+    }
 }

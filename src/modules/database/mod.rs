@@ -1,4 +1,5 @@
 pub mod plotter;
+pub mod summaries;
 
 use std::vec::IntoIter;
 use crate::modules::financial::*;
