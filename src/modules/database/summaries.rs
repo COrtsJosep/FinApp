@@ -77,7 +77,10 @@ impl DataBase {
             summary
                 .clone()
                 .lazy()
-                .sort(["creation_date"], SortMultipleOptions::default())
+                .sort(
+                    ["currency", "total_value"],
+                    SortMultipleOptions::default().with_order_descending_multi([false, true]),
+                )
                 .select([
                     col("name"),
                     col("country"),
