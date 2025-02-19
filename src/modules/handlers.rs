@@ -90,7 +90,8 @@ impl eframe::App for AppState {
         if self.show_plotting_window {
             //let mut currency_exchange: CurrencyExchange = CurrencyExchange::init();
             //currency_exchange.save();
-            self.database.monthly_expenses(&Currency::EUR);
+            //self.database.monthly_expenses(&Currency::EUR);
+            print!("{}", self.database.current_fund_stand(Option::from(None)));
             panic!("Stop this madness")
             // todo!()
         }
@@ -143,8 +144,17 @@ impl AppState {
         }
     }
 
+    fn is_valid_transaction_currency(&self) -> bool {
+        &self.transaction_currency
+            == self
+                .database
+                .account(self.transaction_account_id)
+                .currency()
+    }
+
     fn are_valid_transaction_fields(&self) -> bool {
-        ((self.transaction_category.len() > 0) | self.transaction_type.is_fund_change())
+        ((self.transaction_category.len() > 0)
+            | (self.transaction_type.is_fund_change() & self.is_valid_transaction_currency()))
             & self.is_valid_transaction_value()
     }
 
@@ -477,6 +487,9 @@ impl AppState {
                                     );
                                 }
                             });
+                        if !self.is_valid_transaction_currency() {
+                            ui.colored_label(Color32::from_rgb(255, 0, 0), "Currency mismatch!");
+                        }
                     });
 
                     ui.horizontal(|ui| {
@@ -495,14 +508,18 @@ impl AppState {
                                 .selected_text(format!("{}", self.transaction_account_string))
                                 .show_ui(ui, |ui| {
                                     for account_id in self.database.iter_account_ids() {
-                                        ui.selectable_value(
-                                            &mut self.transaction_account_id,
-                                            account_id,
-                                            format!(
-                                                "{:}",
-                                                self.database.account(account_id).to_string()
-                                            ),
-                                        );
+                                        if self.database.account(account_id).currency()
+                                            == &self.transaction_currency
+                                        {
+                                            ui.selectable_value(
+                                                &mut self.transaction_account_id,
+                                                account_id,
+                                                format!(
+                                                    "{:}",
+                                                    self.database.account(account_id).to_string()
+                                                ),
+                                            );
+                                        }
                                     }
                                 });
                         });
