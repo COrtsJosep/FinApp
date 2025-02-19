@@ -71,6 +71,7 @@ impl DataBase {
                     col("account_type"),
                     col(currency_to.to_string()),
                 ])
+                .filter(col(currency_to.to_string()).gt_eq(lit(0.01)))
                 .collect()
                 .unwrap()
         } else {
@@ -88,8 +89,9 @@ impl DataBase {
                     col("account_type"),
                     col("total_value"),
                 ])
+                .filter(col("total_value").gt_eq(lit(0.01)))
                 .collect()
-                .expect("Failed to join funds")
+                .unwrap()
         }
     }
 }
