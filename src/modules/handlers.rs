@@ -6,6 +6,7 @@ use chrono::{Local, NaiveDate};
 use derivative::*;
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
+use egui::{Align, Layout};
 use egui_autocomplete::AutoCompleteTextEdit;
 use egui_extras::*;
 use strum::IntoEnumIterator;
@@ -22,6 +23,7 @@ pub struct AppState {
     show_input_party_window: bool,
     show_input_transaction_window: bool,
     show_plotting_window: bool,
+    show_monthly_summary_window: bool,
 
     database: DataBase,
 
@@ -52,6 +54,8 @@ pub struct AppState {
     transaction_account_id: i64,
     transaction_account_string: String,
     transaction_type: TransactionType,
+
+    monthly_summary: String,
 }
 
 impl eframe::App for AppState {
@@ -88,11 +92,17 @@ impl eframe::App for AppState {
         }
 
         if self.show_plotting_window {
+            self.handle_show_monthly_summary_window(ctx)
+
             //let mut currency_exchange: CurrencyExchange = CurrencyExchange::init();
             //currency_exchange.save();
             //self.database.monthly_expenses(&Currency::EUR);
-            print!("{}", self.database.current_fund_stand(Option::from(None)));
-            panic!("Stop this madness")
+            //print!(
+            //  "{}",
+            //self.database
+            //  .monthly_summary(Local::now().date_naive(), &Currency::CHF)
+            //);
+            //panic!("Stop this madness")
             // todo!()
         }
     }
@@ -634,5 +644,59 @@ impl AppState {
                 }
             },
         );
+    }
+    pub fn handle_show_monthly_summary_window(&mut self, ctx: &egui::Context) -> () {
+        ctx.show_viewport_immediate(
+            egui::ViewportId::from_hash_of("input_monthly_summary_window"),
+            egui::ViewportBuilder::default()
+                .with_title("Monthly summary window")
+                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
+            |ctx, class| {
+                assert!(
+                    class == egui::ViewportClass::Immediate,
+                    "This egui backend doesn't support multiple viewports"
+                );
+
+                if self.monthly_summary == String::default() {
+                    self.monthly_summary = self
+                        .database
+                        .monthly_summary(Local::now().date_naive(), &Currency::CHF);
+                }
+
+                let header_line: String =
+                    self.monthly_summary.split("\n").collect::<Vec<&str>>()[0].to_string();
+                let row_lines: Vec<&str> =
+                    self.monthly_summary.split("\n").collect::<Vec<&str>>()[1..].to_vec();
+                let column_count: usize = header_line.split(",").count();
+
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    TableBuilder::new(ui)
+                        .columns(egui_extras::Column::auto().resizable(true), column_count)
+                        .striped(true)
+                        .cell_layout(Layout::right_to_left(Align::Center))
+                        .header(20.0, |mut header| {
+                            for column_name in header_line.split(",") {
+                                header.col(|ui| {
+                                    ui.strong(column_name).on_hover_text(column_name);
+                                });
+                            }
+                        })
+                        .body(|mut body| {
+                            for row_line in row_lines {
+                                body.row(30.0, |mut row_ui| {
+                                    for element in row_line.split(",") {
+                                        row_ui.col(|ui| {
+                                            ui.label(element);
+                                        });
+                                    }
+                                });
+                            }
+                        });
+                });
+                if ctx.input(|i| i.viewport().close_requested()) {
+                    self.show_monthly_summary_window = false;
+                }
+            },
+        )
     }
 }
