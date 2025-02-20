@@ -487,7 +487,9 @@ impl AppState {
                                     );
                                 }
                             });
-                        if !self.is_valid_transaction_currency() {
+                        if !self.is_valid_transaction_currency()
+                            & self.transaction_type.is_fund_change()
+                        {
                             ui.colored_label(Color32::from_rgb(255, 0, 0), "Currency mismatch!");
                         }
                     });
