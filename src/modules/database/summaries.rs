@@ -33,6 +33,17 @@ fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
         .replace(".0,", ".00,")
 }
 
+fn capitalize_every_word(sentence: String) -> String {
+    /// Copied and addapted to my needs from thirtyseconds
+    /// https://docs.rs/thirtyseconds/latest/thirtyseconds/strings/fn.capitalize_every_word.html
+    sentence
+        .as_str()
+        .split(' ')
+        .map(|word| format!("{}{}", &word[..1].to_uppercase(), &word[1..]))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 impl DataBase {
     fn total_monthly_income(&self, date: NaiveDate, currency_to: &Currency) -> f64 {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
@@ -240,12 +251,31 @@ impl DataBase {
                 SortMultipleOptions::default().with_order_descending_multi([false, false]),
             )
             .select([all().name().map(|name| {
-                Ok(PlSmallStr::from_string(
-                    name.replace("_", " ").to_uppercase(),
-                ))
+                Ok(PlSmallStr::from_string(capitalize_every_word(
+                    name.replace("_", " "),
+                )))
             })])
             .collect()
             .unwrap();
+
+        let total_monthly_expenses: f64 = summary
+            .column(currency_to.to_string().as_str())
+            .unwrap()
+            .f64()
+            .unwrap()
+            .sum()
+            .unwrap();
+
+        let last_row: DataFrame = df!(
+        "Category" => ["Total"],
+        "Subcategory" => ["Total"],
+        currency_to.to_string().as_str() => [(100.0 * total_monthly_expenses).round() / 100.0],
+        "% Total Expenses" => [100.0],
+        "% Total Income" => [(100.0 * total_monthly_expenses / total_monthly_income).round() / 100.0]
+        )
+        .unwrap();
+
+        summary = summary.vstack(&last_row).unwrap();
 
         data_frame_to_csv_string(&mut summary)
     }
