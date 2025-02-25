@@ -60,6 +60,8 @@ pub struct AppState {
 
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> () {
+        egui_extras::install_image_loaders(ctx);
+
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Welcome to you personal finances app!");
             if ui.button("Add records").clicked() {
@@ -220,6 +222,12 @@ impl AppState {
                         let entity_name_label = ui.label("Entity name: ");
                         ui.text_edit_singleline(&mut self.entity_name)
                             .labelled_by(entity_name_label.id);
+                        ui.add(
+                            egui::Image::new(egui::include_image!("../../icons/help_icon2.png"))
+                                .max_width(20.0f32)
+                                .max_height(20.0f32),
+                        )
+                        .on_hover_text("I hope this info is very useful!!");
                     });
                     ui.horizontal(|ui| {
                         ui.label("Entity country: ");
@@ -298,95 +306,93 @@ impl AppState {
                 );
 
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Input window");
-                    ui.horizontal(|ui| {
-                        let account_name_label = ui.label("Account name: ");
-                        ui.text_edit_singleline(&mut self.account_name)
-                            .labelled_by(account_name_label.id);
-                    });
+                    egui::Grid::new("my_grid")
+                        .num_columns(3)
+                        .spacing([45.0, 4.0])
+                        //.striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Account name: ").on_hover_text("Name of the account. For instance, the name of the bank, or the investment fund.");
+                            ui.text_edit_singleline(&mut self.account_name);
+                            ui.end_row();
 
-                    ui.horizontal(|ui| {
-                        ui.label("Account country: ");
-                        ui.add(
-                            AutoCompleteTextEdit::new(
-                                &mut self.account_country,
-                                self.database.account_countries(),
-                            )
-                            .max_suggestions(10)
-                            .highlight_matches(true),
-                        );
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.label("Account currency: ");
-                        ComboBox::from_id_salt("Account currency")
-                            .selected_text(format!("{}", self.account_currency))
-                            .show_ui(ui, |ui| {
-                                for possible_account_currency in Currency::iter() {
-                                    ui.selectable_value(
-                                        &mut self.account_currency,
-                                        possible_account_currency.clone(),
-                                        format!("{possible_account_currency}"),
-                                    );
-                                }
-                            });
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.label("Account type: ");
-
-                        ComboBox::from_id_salt("Account type")
-                            .selected_text(format!("{}", self.account_type))
-                            .show_ui(ui, |ui| {
-                                for possible_account_type in AccountType::iter() {
-                                    ui.selectable_value(
-                                        &mut self.account_type,
-                                        possible_account_type.clone(),
-                                        format!("{possible_account_type}"),
-                                    );
-                                }
-                            });
-                    });
-
-                    ui.horizontal(|ui| {
-                        let account_initial_balance_label = ui.label("Account initial balance: ");
-                        ui.text_edit_singleline(&mut self.account_initial_balance_tentative)
-                            .labelled_by(account_initial_balance_label.id);
-
-                        if self.is_valid_initial_balance() {
-                            ui.colored_label(
-                                Color32::from_rgb(110, 255, 110),
-                                "Valid initial balance!",
+                            ui.label("Account country: ").on_hover_text("Country where the account is based.");
+                            ui.add(
+                                AutoCompleteTextEdit::new(
+                                    &mut self.account_country,
+                                    self.database.account_countries(),
+                                )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
-                        } else {
-                            ui.colored_label(
-                                Color32::from_rgb(255, 0, 0),
-                                "Invalid initial balance!",
-                            );
+                            ui.end_row();
+
+                            ui.label("Account currency: ").on_hover_text("Currency of the account. If multiple, consider creating various accounts with different currencies.");
+                            ComboBox::from_id_salt("Account currency")
+                                .selected_text(format!("{}", self.account_currency))
+                                .show_ui(ui, |ui| {
+                                    for possible_account_currency in Currency::iter() {
+                                        ui.selectable_value(
+                                            &mut self.account_currency,
+                                            possible_account_currency.clone(),
+                                            format!("{possible_account_currency}"),
+                                        );
+                                    }
+                                });
+                            ui.end_row();
+
+                            ui.label("Account type: ").on_hover_text("Category of the account.");
+                            ComboBox::from_id_salt("Account type")
+                                .selected_text(format!("{}", self.account_type))
+                                .show_ui(ui, |ui| {
+                                    for possible_account_type in AccountType::iter() {
+                                        ui.selectable_value(
+                                            &mut self.account_type,
+                                            possible_account_type.clone(),
+                                            format!("{possible_account_type}"),
+                                        );
+                                    }
+                                });
+                            ui.end_row();
+
+                            ui.label("Account initial balance: ").on_hover_text("Amount of money stored in the account, in the given currency, at this moment.");
+                            ui.text_edit_singleline(&mut self.account_initial_balance_tentative);
+                            if self.is_valid_initial_balance() {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid initial balance!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Invalid initial balance!",
+                                );
+                            }
+                        });
+
+                    ui.separator();
+                    ui.vertical_centered_justified(|ui| {
+                        if self.are_valid_account_fields() {
+                            self.account_initial_balance = self
+                                .account_initial_balance_tentative
+                                .parse::<f64>()
+                                .expect("Error parsing account initial balance");
+
+                            if ui.button("Add new account").on_hover_text("Save account into the database.").clicked() {
+                                let account: Account = Account::new(
+                                    self.account_name.clone(),
+                                    self.account_country.clone(),
+                                    self.account_currency.clone(),
+                                    self.account_type.clone(),
+                                    self.account_initial_balance,
+                                );
+                                self.database.insert_account(&account);
+                                self.database.save();
+                                self.clear_fields();
+
+                                self.show_input_account_window = false;
+                            }
                         }
                     });
-
-                    if self.are_valid_account_fields() {
-                        self.account_initial_balance = self
-                            .account_initial_balance_tentative
-                            .parse::<f64>()
-                            .expect("Error parsing account initial balance");
-
-                        if ui.button("Add new account").clicked() {
-                            let account: Account = Account::new(
-                                self.account_name.clone(),
-                                self.account_country.clone(),
-                                self.account_currency.clone(),
-                                self.account_type.clone(),
-                                self.account_initial_balance,
-                            );
-                            self.database.insert_account(&account);
-                            self.database.save();
-                            self.clear_fields();
-
-                            self.show_input_account_window = false;
-                        }
-                    }
                 });
 
                 if ctx.input(|i| i.viewport().close_requested()) {
