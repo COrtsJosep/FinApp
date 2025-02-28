@@ -77,7 +77,6 @@ impl AppState {
                 );
 
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Input window");
                     if ui.button("Add new entity").clicked() {
                         // unsure whether to involve show_input_window
                         self.show_input_entity_window = self.show_input_window & true;
@@ -345,7 +344,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("input_party_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input party window")
-                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
+                .with_inner_size([WINDOW_WIDTH * 1.5, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -400,108 +399,116 @@ impl AppState {
                 );
 
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Input window");
-                    ui.horizontal(|ui| {
-                        for transaction_type in TransactionType::iter() {
-                            ui.selectable_value(
-                                &mut self.transaction_type,
-                                transaction_type.clone(),
-                                transaction_type.to_string(),
-                            );
-                        }
-                    });
-                    ui.end_row();
-
-                    ui.horizontal(|ui| {
-                        let transaction_value_label = ui.label("Transaction value: ");
-                        ui.text_edit_singleline(&mut self.transaction_value_tentative)
-                            .labelled_by(transaction_value_label.id);
-                        if self.is_valid_transaction_value() {
-                            ui.colored_label(
-                                Color32::from_rgb(110, 255, 110),
-                                "Valid transaction value!",
-                            );
-                        } else {
-                            ui.colored_label(
-                                Color32::from_rgb(255, 0, 0),
-                                "Invalid transaction value!",
-                            );
-                        }
-                    });
-
-                    ui.horizontal(|ui| {
-                        ui.label("Transaction currency: ");
-                        ComboBox::from_id_salt("Transaction currency")
-                            .selected_text(format!("{}", self.transaction_currency))
-                            .show_ui(ui, |ui| {
-                                for possible_transaction_currency in Currency::iter() {
+                    egui::Grid::new("my_grid")
+                        .num_columns(3)
+                        .spacing([45.0, 4.0])
+                        //.striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Transaction type:")
+                                .on_hover_text("Category of the transaction");
+                            // TODO: Consider adding much more detail to the hover text. This is an
+                            // important point!
+                            ui.horizontal(|ui| {
+                                for transaction_type in TransactionType::iter() {
                                     ui.selectable_value(
-                                        &mut self.transaction_currency,
-                                        possible_transaction_currency.clone(),
-                                        format!("{possible_transaction_currency}"),
+                                        &mut self.transaction_type,
+                                        transaction_type.clone(),
+                                        transaction_type.to_string(),
                                     );
                                 }
                             });
-                        if !self.is_valid_transaction_currency()
-                            & self.transaction_type.is_fund_change()
-                        {
-                            ui.colored_label(Color32::from_rgb(255, 0, 0), "Currency mismatch!");
-                        }
-                    });
+                            ui.end_row();
 
-                    ui.horizontal(|ui| {
-                        ui.label("Transaction date: ");
-                        ui.add(DatePickerButton::new(&mut self.transaction_date));
-                        if ui.button("Today").clicked() {
-                            self.transaction_date = Local::now().date_naive();
-                        }
-                        ui.end_row();
-                    });
+                            ui.label("Transaction value:")
+                                .on_hover_text("Monetary value of the transaction.");
+                            ui.text_edit_singleline(&mut self.transaction_value_tentative);
+                            if self.is_valid_transaction_value() {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid transaction value!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Invalid transaction value!",
+                                );
+                            }
+                            ui.end_row();
 
-                    if self.transaction_type.is_fund_change() {
-                        ui.horizontal(|ui| {
-                            ui.label("Transaction account: ");
-                            ComboBox::from_id_salt("Transaction account")
-                                .selected_text(format!("{}", self.transaction_account_string))
+                            ui.label("Transaction currency: ")
+                                .on_hover_text("Currency of the transaction.");
+                            ComboBox::from_id_salt("Transaction currency")
+                                .selected_text(format!("{}", self.transaction_currency))
                                 .show_ui(ui, |ui| {
-                                    for account_id in self.database.iter_account_ids() {
-                                        if self.database.account(account_id).currency()
-                                            == &self.transaction_currency
-                                        {
-                                            ui.selectable_value(
-                                                &mut self.transaction_account_id,
-                                                account_id,
-                                                format!(
-                                                    "{:}",
-                                                    self.database.account(account_id).to_string()
-                                                ),
-                                            );
-                                        }
-                                    }
-                                });
-                        });
-                    } else {
-                        // it is not fund change
-                        ui.horizontal(|ui| {
-                            ui.label("Transaction entity: ");
-                            ComboBox::from_id_salt("Transaction entity")
-                                .selected_text(format!("{}", self.transaction_entity_string))
-                                .show_ui(ui, |ui| {
-                                    for entity_id in self.database.iter_entity_ids() {
+                                    for possible_transaction_currency in Currency::iter() {
                                         ui.selectable_value(
-                                            &mut self.transaction_entity_id,
-                                            entity_id,
-                                            format!(
-                                                "{:}",
-                                                self.database.entity(entity_id).to_string()
-                                            ),
+                                            &mut self.transaction_currency,
+                                            possible_transaction_currency.clone(),
+                                            format!("{possible_transaction_currency}"),
                                         );
                                     }
                                 });
-                        });
+                            if !self.is_valid_transaction_currency()
+                                & self.transaction_type.is_fund_change()
+                            {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Mismatch between transaction and account currencies!",
+                                );
+                            }
+                            ui.end_row();
 
-                        ui.horizontal(|ui| {
-                            ui.label("Transaction category: ");
+                            ui.label("Transaction date:")
+                                .on_hover_text("Date in which the transaction happened.");
+                            ui.add(DatePickerButton::new(&mut self.transaction_date));
+                            ui.end_row();
+
+                            if self.transaction_type.is_fund_change() {
+                                ui.label("Transaction account:")
+                                    .on_hover_text("Account that is affected by the transaction.");
+                                ComboBox::from_id_salt("Transaction account")
+                                    .selected_text(format!("{}", self.transaction_account_string))
+                                    .show_ui(ui, |ui| {
+                                        for account_id in self.database.iter_account_ids() {
+                                            if self.database.account(account_id).currency()
+                                                == &self.transaction_currency
+                                            {
+                                                ui.selectable_value(
+                                                    &mut self.transaction_account_id,
+                                                    account_id,
+                                                    format!(
+                                                        "{:}",
+                                                        self.database
+                                                            .account(account_id)
+                                                            .to_string()
+                                                    ),
+                                                );
+                                            }
+                                        }
+                                    });
+                            } else {
+                                // it is not fund change
+                                ui.label("Transaction entity:")
+                                    .on_hover_text("Entity with whom the transaction is made.");
+                                ComboBox::from_id_salt("Transaction entity")
+                                    .selected_text(format!("{}", self.transaction_entity_string))
+                                    .show_ui(ui, |ui| {
+                                        for entity_id in self.database.iter_entity_ids() {
+                                            ui.selectable_value(
+                                                &mut self.transaction_entity_id,
+                                                entity_id,
+                                                format!(
+                                                    "{:}",
+                                                    self.database.entity(entity_id).to_string()
+                                                ),
+                                            );
+                                        }
+                                    });
+                            };
+                            ui.end_row();
+
+                            ui.label("Transaction category:")
+                                .on_hover_text("Category of the transaction.");
                             ui.add(
                                 AutoCompleteTextEdit::new(
                                     &mut self.transaction_category,
@@ -510,10 +517,10 @@ impl AppState {
                                 .max_suggestions(10)
                                 .highlight_matches(true),
                             );
-                        });
+                            ui.end_row();
 
-                        ui.horizontal(|ui| {
-                            ui.label("Transaction subcategory: ");
+                            ui.label("Transaction subcategory:")
+                                .on_hover_text("Subcategory of the transaction.");
                             ui.add(
                                 AutoCompleteTextEdit::new(
                                     &mut self.transaction_subcategory,
@@ -525,69 +532,70 @@ impl AppState {
                                 .max_suggestions(10)
                                 .highlight_matches(true),
                             );
+                            ui.end_row();
+
+                            ui.label("Transaction description:")
+                                .on_hover_text("Text description of the transaction.");
+                            ui.text_edit_singleline(&mut self.transaction_description);
+                            ui.end_row()
                         });
 
-                        ui.horizontal(|ui| {
-                            let transaction_description_label =
-                                ui.label("Transaction description: ");
-                            ui.text_edit_singleline(&mut self.transaction_description)
-                                .labelled_by(transaction_description_label.id);
-                        });
-                    }
+                    ui.separator();
+                    ui.vertical_centered_justified(|ui| {
+                        if self.are_valid_transaction_fields() {
+                            self.transaction_value = self
+                                .transaction_value_tentative
+                                .parse::<f64>()
+                                .expect("Error parsing transaction value");
 
-                    if self.are_valid_transaction_fields() {
-                        self.transaction_value = self
-                            .transaction_value_tentative
-                            .parse::<f64>()
-                            .expect("Error parsing transaction value");
+                            let transaction: Transaction = match self.transaction_type {
+                                TransactionType::Income => Transaction::Income {
+                                    value: self.transaction_value,
+                                    currency: self.transaction_currency.clone(),
+                                    date: self.transaction_date,
+                                    category: self.transaction_category.clone(),
+                                    subcategory: self.transaction_subcategory.clone(),
+                                    description: self.transaction_description.clone(),
+                                    entity_id: self.transaction_entity_id,
+                                },
+                                TransactionType::Expense => Transaction::Expense {
+                                    value: self.transaction_value,
+                                    currency: self.transaction_currency.clone(),
+                                    date: self.transaction_date,
+                                    category: self.transaction_category.clone(),
+                                    subcategory: self.transaction_subcategory.clone(),
+                                    description: self.transaction_description.clone(),
+                                    entity_id: self.transaction_entity_id,
+                                },
+                                TransactionType::Credit => Transaction::Credit {
+                                    value: self.transaction_value,
+                                    currency: self.transaction_currency.clone(),
+                                    date: self.transaction_date,
+                                    account_id: self.transaction_account_id,
+                                },
+                                TransactionType::Debit => Transaction::Debit {
+                                    value: self.transaction_value,
+                                    currency: self.transaction_currency.clone(),
+                                    date: self.transaction_date,
+                                    account_id: self.transaction_account_id,
+                                },
+                            };
 
-                        let transaction: Transaction = match self.transaction_type {
-                            TransactionType::Income => Transaction::Income {
-                                value: self.transaction_value,
-                                currency: self.transaction_currency.clone(),
-                                date: self.transaction_date,
-                                category: self.transaction_category.clone(),
-                                subcategory: self.transaction_subcategory.clone(),
-                                description: self.transaction_description.clone(),
-                                entity_id: self.transaction_entity_id,
-                            },
-                            TransactionType::Expense => Transaction::Expense {
-                                value: self.transaction_value,
-                                currency: self.transaction_currency.clone(),
-                                date: self.transaction_date,
-                                category: self.transaction_category.clone(),
-                                subcategory: self.transaction_subcategory.clone(),
-                                description: self.transaction_description.clone(),
-                                entity_id: self.transaction_entity_id,
-                            },
-                            TransactionType::Credit => Transaction::Credit {
-                                value: self.transaction_value,
-                                currency: self.transaction_currency.clone(),
-                                date: self.transaction_date,
-                                account_id: self.transaction_account_id,
-                            },
-                            TransactionType::Debit => Transaction::Debit {
-                                value: self.transaction_value,
-                                currency: self.transaction_currency.clone(),
-                                date: self.transaction_date,
-                                account_id: self.transaction_account_id,
-                            },
-                        };
+                            if ui.button("Add transaction").clicked() {
+                                self.party.add_transaction(transaction);
+                                self.clear_transaction_fields();
 
-                        if ui.button("Add transaction").clicked() {
-                            self.party.add_transaction(transaction);
-                            self.clear_transaction_fields();
-
-                            self.show_input_transaction_window = false;
+                                self.show_input_transaction_window = false;
+                            }
+                        } else {
+                            ui.label("Invalid transaction fields");
                         }
-                    } else {
-                        ui.label("Invalid transaction fields");
-                    }
+                    });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
                     self.show_input_transaction_window = false;
                 }
             },
-        );
+        )
     }
 }
