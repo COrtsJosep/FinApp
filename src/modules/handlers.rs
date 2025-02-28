@@ -1,5 +1,3 @@
-use crate::modules::currency_exchange;
-use crate::modules::currency_exchange::*;
 use crate::modules::database::*;
 use crate::modules::financial::*;
 use chrono::{Local, NaiveDate};
@@ -215,76 +213,98 @@ impl AppState {
                     class == egui::ViewportClass::Immediate,
                     "This egui backend doesn't support multiple viewports"
                 );
-
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Input window");
-                    ui.horizontal(|ui| {
-                        let entity_name_label = ui.label("Entity name: ");
-                        ui.text_edit_singleline(&mut self.entity_name)
-                            .labelled_by(entity_name_label.id);
-                        ui.add(
-                            egui::Image::new(egui::include_image!("../../icons/help_icon2.png"))
-                                .max_width(20.0f32)
-                                .max_height(20.0f32),
-                        )
-                        .on_hover_text("I hope this info is very useful!!");
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Entity country: ");
-                        ui.add(
-                            AutoCompleteTextEdit::new(
-                                &mut self.entity_country,
-                                self.database.entity_countries(),
-                            )
-                            .max_suggestions(10)
-                            .highlight_matches(true),
-                        );
-                    });
-                    ui.horizontal(|ui| {
-                        ui.label("Entity type: ");
-                        ComboBox::from_id_salt("Entity type")
-                            .selected_text(format!("{}", self.entity_type))
-                            .show_ui(ui, |ui| {
-                                for possible_entity_type in EntityType::iter() {
-                                    ui.selectable_value(
-                                        &mut self.entity_type,
-                                        possible_entity_type.clone(),
-                                        format!("{possible_entity_type}"),
-                                    );
-                                }
-                            });
-                    });
+                    egui::Grid::new("my_grid")
+                        .num_columns(3)
+                        .spacing([45.0, 4.0])
+                        //.striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Entity name:")
+                                .on_hover_text("Name of the entity. For instance, the shop's name");
+                            ui.text_edit_singleline(&mut self.entity_name);
+                            if self.entity_name.len() > 0 {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid entity name!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Please enter an entity name!",
+                                );
+                            }
+                            ui.end_row();
 
-                    ui.horizontal(|ui| {
-                        ui.label("Entity subtype: ");
-                        ui.add(
-                            AutoCompleteTextEdit::new(
-                                &mut self.entity_subtype,
-                                self.database.entity_subtypes(),
-                            )
-                            .max_suggestions(10)
-                            .highlight_matches(true),
-                        );
-                    });
-
-                    if self.are_valid_entity_fields() {
-                        if ui.button("Add new entity").clicked() {
-                            let entity: Entity = Entity::new(
-                                self.entity_name.clone(),
-                                self.entity_country.clone(),
-                                self.entity_type.clone(),
-                                self.entity_subtype.clone(),
+                            ui.label("Entity country:")
+                                .on_hover_text("Country where the entity is based.");
+                            ui.add(
+                                AutoCompleteTextEdit::new(
+                                    &mut self.entity_country,
+                                    self.database.entity_countries(),
+                                )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
+                            if self.entity_country.len() > 0 {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid entity country!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Please enter an entity country!",
+                                );
+                            }
+                            ui.end_row();
 
-                            self.database.insert_entity(&entity);
-                            self.database.save();
-                            self.clear_fields();
+                            ui.label("Entity type:")
+                                .on_hover_text("Category of the entity.");
+                            ComboBox::from_id_salt("Entity type")
+                                .selected_text(format!("{}", self.entity_type))
+                                .show_ui(ui, |ui| {
+                                    for possible_entity_type in EntityType::iter() {
+                                        ui.selectable_value(
+                                            &mut self.entity_type,
+                                            possible_entity_type.clone(),
+                                            format!("{possible_entity_type}"),
+                                        );
+                                    }
+                                });
+                            ui.end_row();
 
-                            self.show_input_entity_window = false;
+                            ui.label("Entity subtype:")
+                                .on_hover_text("Sub-category of the entity.");
+                            ui.add(
+                                AutoCompleteTextEdit::new(
+                                    &mut self.entity_subtype,
+                                    self.database.entity_subtypes(),
+                                )
+                                .max_suggestions(10)
+                                .highlight_matches(true),
+                            );
+                            ui.end_row();
+                        });
+
+                    ui.separator();
+                    ui.vertical_centered_justified(|ui| {
+                        if self.are_valid_entity_fields() {
+                            if ui.button("Add new entity").clicked() {
+                                let entity: Entity = Entity::new(
+                                    self.entity_name.clone(),
+                                    self.entity_country.clone(),
+                                    self.entity_type.clone(),
+                                    self.entity_subtype.clone(),
+                                );
+
+                                self.database.insert_entity(&entity);
+                                self.database.save();
+                                self.clear_fields();
+
+                                self.show_input_entity_window = false;
+                            }
                         }
-                    } else {
-                        ui.label("Invalid fields");
-                    }
+                    });
                 });
 
                 if ctx.input(|i| i.viewport().close_requested()) {
@@ -313,6 +333,17 @@ impl AppState {
                         .show(ui, |ui| {
                             ui.label("Account name: ").on_hover_text("Name of the account. For instance, the name of the bank, or the investment fund.");
                             ui.text_edit_singleline(&mut self.account_name);
+                            if self.account_name.len() > 0 {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid account name!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Invalid account name!",
+                                );
+                            }
                             ui.end_row();
 
                             ui.label("Account country: ").on_hover_text("Country where the account is based.");
@@ -324,6 +355,17 @@ impl AppState {
                                 .max_suggestions(10)
                                 .highlight_matches(true),
                             );
+                            if self.account_country.len() > 0 {
+                                ui.colored_label(
+                                    Color32::from_rgb(110, 255, 110),
+                                    "Valid account country!",
+                                );
+                            } else {
+                                ui.colored_label(
+                                    Color32::from_rgb(255, 0, 0),
+                                    "Invalid account country!",
+                                );
+                            }
                             ui.end_row();
 
                             ui.label("Account currency: ").on_hover_text("Currency of the account. If multiple, consider creating various accounts with different currencies.");
@@ -354,7 +396,7 @@ impl AppState {
                                 });
                             ui.end_row();
 
-                            ui.label("Account initial balance: ").on_hover_text("Amount of money stored in the account, in the given currency, at this moment.");
+                            ui.label("Account initial balance: ").on_hover_text("Amount of money stored in the account, in the given currency, in this very moment.");
                             ui.text_edit_singleline(&mut self.account_initial_balance_tentative);
                             if self.is_valid_initial_balance() {
                                 ui.colored_label(
@@ -367,6 +409,7 @@ impl AppState {
                                     "Invalid initial balance!",
                                 );
                             }
+                            ui.end_row();
                         });
 
                     ui.separator();
