@@ -50,7 +50,7 @@ pub trait Table {
         let file_name: String = format!("data/{}_table.csv", Self::name());
         let path: &Path = Path::new(&file_name);
         if !path.parent().expect("path does not have parent").exists() {
-            create_dir(path.parent().expect("path does not have parents"));
+            let _ = create_dir(path.parent().expect("path does not have parents"));
         }
 
         let mut file = File::create(path)

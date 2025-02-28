@@ -58,8 +58,6 @@ pub struct AppState {
 
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> () {
-        egui_extras::install_image_loaders(ctx);
-
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Welcome to you personal finances app!");
             if ui.button("Add records").clicked() {
@@ -720,7 +718,7 @@ impl AppState {
 
                 egui::CentralPanel::default().show(ctx, |ui| {
                     TableBuilder::new(ui)
-                        .columns(egui_extras::Column::auto().resizable(true), column_count)
+                        .columns(Column::auto().resizable(true), column_count)
                         .striped(true)
                         .cell_layout(Layout::right_to_left(Align::Center))
                         .header(20.0, |mut header| {
