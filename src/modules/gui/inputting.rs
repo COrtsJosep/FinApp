@@ -14,10 +14,6 @@ impl AppState {
     }
 
     fn clear_transaction_fields(&mut self) -> () {
-        self.transaction_value = f64::default();
-        self.transaction_value_tentative = String::default();
-        self.transaction_currency = Currency::default();
-        self.transaction_date = Local::now().date_naive();
         self.transaction_category = String::default();
         self.transaction_subcategory = String::default();
         self.transaction_description = String::default();
@@ -57,9 +53,9 @@ impl AppState {
     fn is_valid_transaction_currency(&self) -> bool {
         &self.transaction_currency
             == self
-            .database
-            .account(self.transaction_account_id)
-            .currency()
+                .database
+                .account(self.transaction_account_id)
+                .currency()
     }
 
     fn are_valid_transaction_fields(&self) -> bool {
@@ -142,8 +138,8 @@ impl AppState {
                                     &mut self.entity_country,
                                     self.database.entity_countries(),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                             if self.entity_country.len() > 0 {
                                 ui.colored_label(
@@ -180,8 +176,8 @@ impl AppState {
                                     &mut self.entity_subtype,
                                     self.database.entity_subtypes(),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                             ui.end_row();
                         });
@@ -511,8 +507,8 @@ impl AppState {
                                     &mut self.transaction_category,
                                     self.database.transaction_categories(&self.transaction_type),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                         });
 
@@ -526,8 +522,8 @@ impl AppState {
                                         self.transaction_category.clone(),
                                     ),
                                 )
-                                    .max_suggestions(10)
-                                    .highlight_matches(true),
+                                .max_suggestions(10)
+                                .highlight_matches(true),
                             );
                         });
 
