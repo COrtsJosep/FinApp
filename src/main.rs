@@ -1,5 +1,5 @@
 use eframe::egui;
-use FinApp::modules::handlers::*;
+use FinApp::modules::gui::*;
 
 fn main() -> eframe::Result {
     env_logger::init();

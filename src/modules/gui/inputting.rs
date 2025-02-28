@@ -1,110 +1,12 @@
-use crate::modules::database::*;
+use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
+
 use crate::modules::financial::*;
-use chrono::{Local, NaiveDate};
-use derivative::*;
+use chrono::Local;
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
-use egui::{Align, Layout};
 use egui_autocomplete::AutoCompleteTextEdit;
 use egui_extras::*;
 use strum::IntoEnumIterator;
-
-const WINDOW_WIDTH: f32 = 600.0;
-const WINDOW_HEIGHT: f32 = 400.0;
-
-#[derive(Derivative)]
-#[derivative(Default)]
-pub struct AppState {
-    show_input_window: bool,
-    show_input_entity_window: bool,
-    show_input_account_window: bool,
-    show_input_party_window: bool,
-    show_input_transaction_window: bool,
-    show_plotting_window: bool,
-    show_monthly_summary_window: bool,
-
-    database: DataBase,
-
-    entity_name: String,
-    entity_country: String,
-    entity_type: EntityType,
-    entity_subtype: String,
-
-    account_name: String,
-    account_country: String,
-    account_currency: Currency,
-    account_type: AccountType,
-    account_initial_balance: f64,
-    account_initial_balance_tentative: String,
-
-    party: Party,
-
-    transaction_value: f64,
-    transaction_value_tentative: String,
-    transaction_currency: Currency,
-    #[derivative(Default(value = "Local::now().date_naive()"))]
-    transaction_date: NaiveDate,
-    transaction_category: String,
-    transaction_subcategory: String,
-    transaction_description: String,
-    transaction_entity_id: i64,
-    transaction_entity_string: String,
-    transaction_account_id: i64,
-    transaction_account_string: String,
-    transaction_type: TransactionType,
-
-    monthly_summary: String,
-}
-
-impl eframe::App for AppState {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> () {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("Welcome to you personal finances app!");
-            if ui.button("Add records").clicked() {
-                self.show_input_window = true;
-            };
-
-            if ui.button("Plotting").clicked() {
-                self.show_plotting_window = true;
-            };
-        });
-
-        if self.show_input_window {
-            self.handle_show_input_window(ctx);
-        }
-
-        if self.show_input_entity_window {
-            self.handle_show_input_entity_window(ctx);
-        }
-
-        if self.show_input_account_window {
-            self.handle_show_input_account_window(ctx);
-        }
-
-        if self.show_input_party_window {
-            self.handle_show_input_party_window(ctx);
-        }
-
-        if self.show_input_transaction_window {
-            self.handle_show_input_transaction_window(ctx)
-        }
-
-        if self.show_plotting_window {
-            self.handle_show_monthly_summary_window(ctx)
-
-            //let mut currency_exchange: CurrencyExchange = CurrencyExchange::init();
-            //currency_exchange.save();
-            //self.database.monthly_expenses(&Currency::EUR);
-            //print!(
-            //  "{}",
-            //self.database
-            //  .monthly_summary(Local::now().date_naive(), &Currency::CHF)
-            //);
-            //panic!("Stop this madness")
-            // todo!()
-        }
-    }
-}
 
 impl AppState {
     fn clear_fields(&mut self) -> () {
@@ -155,9 +57,9 @@ impl AppState {
     fn is_valid_transaction_currency(&self) -> bool {
         &self.transaction_currency
             == self
-                .database
-                .account(self.transaction_account_id)
-                .currency()
+            .database
+            .account(self.transaction_account_id)
+            .currency()
     }
 
     fn are_valid_transaction_fields(&self) -> bool {
@@ -240,8 +142,8 @@ impl AppState {
                                     &mut self.entity_country,
                                     self.database.entity_countries(),
                                 )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
                             );
                             if self.entity_country.len() > 0 {
                                 ui.colored_label(
@@ -278,8 +180,8 @@ impl AppState {
                                     &mut self.entity_subtype,
                                     self.database.entity_subtypes(),
                                 )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
                             );
                             ui.end_row();
                         });
@@ -350,8 +252,8 @@ impl AppState {
                                     &mut self.account_country,
                                     self.database.account_countries(),
                                 )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
                             );
                             if self.account_country.len() > 0 {
                                 ui.colored_label(
@@ -609,8 +511,8 @@ impl AppState {
                                     &mut self.transaction_category,
                                     self.database.transaction_categories(&self.transaction_type),
                                 )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
                             );
                         });
 
@@ -624,8 +526,8 @@ impl AppState {
                                         self.transaction_category.clone(),
                                     ),
                                 )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
                             );
                         });
 
@@ -691,67 +593,5 @@ impl AppState {
                 }
             },
         );
-    }
-    pub fn handle_show_monthly_summary_window(&mut self, ctx: &egui::Context) -> () {
-        ctx.show_viewport_immediate(
-            egui::ViewportId::from_hash_of("input_monthly_summary_window"),
-            egui::ViewportBuilder::default()
-                .with_title("Monthly summary window")
-                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
-            |ctx, class| {
-                assert!(
-                    class == egui::ViewportClass::Immediate,
-                    "This egui backend doesn't support multiple viewports"
-                );
-
-                if self.monthly_summary == String::default() {
-                    self.monthly_summary = self
-                        .database
-                        .monthly_summary(Local::now().date_naive(), &Currency::CHF);
-                }
-
-                let header_line: String =
-                    self.monthly_summary.split("\n").collect::<Vec<&str>>()[0].to_string();
-                let row_lines: Vec<&str> =
-                    self.monthly_summary.split("\n").collect::<Vec<&str>>()[1..].to_vec();
-                let column_count: usize = header_line.split(",").count();
-
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    TableBuilder::new(ui)
-                        .columns(Column::auto().resizable(true), column_count)
-                        .striped(true)
-                        .cell_layout(Layout::right_to_left(Align::Center))
-                        .header(20.0, |mut header| {
-                            for column_name in header_line.split(",") {
-                                header.col(|ui| {
-                                    ui.strong(column_name).on_hover_text(column_name);
-                                });
-                            }
-                        })
-                        .body(|mut body| {
-                            for row_line in row_lines {
-                                body.row(30.0, |mut row_ui| {
-                                    let mut is_last_row: bool = false;
-                                    for element in row_line.split(",") {
-                                        if element == "Total" {
-                                            is_last_row = true;
-                                        }
-                                        row_ui.col(|ui| {
-                                            if is_last_row {
-                                                ui.strong(element);
-                                            } else {
-                                                ui.label(element);
-                                            }
-                                        });
-                                    }
-                                });
-                            }
-                        });
-                });
-                if ctx.input(|i| i.viewport().close_requested()) {
-                    self.show_monthly_summary_window = false;
-                }
-            },
-        )
     }
 }
