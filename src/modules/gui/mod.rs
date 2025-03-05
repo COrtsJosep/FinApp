@@ -14,7 +14,6 @@ const WINDOW_WIDTH: f32 = 600.0;
 #[derive(Derivative)]
 #[derivative(Default)]
 pub struct AppState {
-    show_input_window: bool,
     show_input_entity_window: bool,
     show_input_account_window: bool,
     show_input_party_window: bool,
@@ -59,18 +58,14 @@ impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> () {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Welcome to you personal finances app!");
-            if ui.button("Add records").clicked() {
-                self.show_input_window = true;
+            if ui.button("Add transactions").clicked() {
+                self.show_input_party_window = true;
             };
 
             if ui.button("Plotting").clicked() {
                 self.show_plotting_window = true;
             };
         });
-
-        if self.show_input_window {
-            self.handle_show_input_window(ctx);
-        }
 
         if self.show_input_entity_window {
             self.handle_show_input_entity_window(ctx);

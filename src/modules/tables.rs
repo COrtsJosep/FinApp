@@ -580,7 +580,7 @@ impl EntityTable {
     }
 
     /// Adds entity to the table
-    pub fn insert_entity(&mut self, entity: &Entity) -> () {
+    pub fn insert_entity(&mut self, entity: &Entity) -> i64 {
         let id: i64 = self.next_id();
 
         let record = df!(
@@ -596,7 +596,9 @@ impl EntityTable {
         self.data_frame = self
             .data_frame
             .vstack(&record)
-            .expect(format!("Failed to insert {} record", EntityTable::name()).as_str())
+            .expect(format!("Failed to insert {} record", EntityTable::name()).as_str());
+
+        id
     }
 
     /// Returns entity given ID
@@ -729,7 +731,7 @@ impl AccountTable {
     }
 
     /// Adds account record to the table
-    pub fn insert_account(&mut self, account: &Account) -> () {
+    pub fn insert_account(&mut self, account: &Account) -> i64 {
         let id: i64 = self.next_id();
 
         let record = df!(
@@ -746,7 +748,9 @@ impl AccountTable {
         self.data_frame = self
             .data_frame
             .vstack(&record)
-            .expect(format!("Failed to insert {} record", AccountTable::name()).as_str())
+            .expect(format!("Failed to insert {} record", AccountTable::name()).as_str());
+
+        id
     }
 
     /// Retrieves account from the table, given ID

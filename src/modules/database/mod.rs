@@ -1,10 +1,10 @@
 pub mod plotter;
 pub mod summaries;
 
-use std::vec::IntoIter;
 use crate::modules::financial::*;
 use crate::modules::tables::*;
 use polars::prelude::*;
+use std::vec::IntoIter;
 
 pub struct DataBase {
     incomes_table: IncomeTable,
@@ -72,8 +72,12 @@ impl DataBase {
 
     fn insert_transaction(&mut self, transaction: &Transaction, party_id: i64) -> () {
         match transaction {
-            Transaction::Expense { .. } => self.expenses_table.insert_transaction(transaction, party_id),
-            Transaction::Income { .. } => self.incomes_table.insert_transaction(transaction, party_id),
+            Transaction::Expense { .. } => self
+                .expenses_table
+                .insert_transaction(transaction, party_id),
+            Transaction::Income { .. } => {
+                self.incomes_table.insert_transaction(transaction, party_id)
+            }
             Transaction::Credit { .. } | Transaction::Debit { .. } => {
                 self.funds_table.insert_transaction(transaction, party_id)
             }
@@ -93,17 +97,17 @@ impl DataBase {
                 self.account_table.data_frame.height() as i64
             ]
         )
-            .unwrap();
+        .unwrap();
 
         data_frame
     }
 
-    pub fn insert_entity(&mut self, entity: &Entity) -> () {
-        self.entity_table.insert_entity(entity);
+    pub fn insert_entity(&mut self, entity: &Entity) -> i64 {
+        self.entity_table.insert_entity(entity)
     }
 
-    pub fn insert_account(&mut self, account: &Account) -> () {
-        self.account_table.insert_account(account);
+    pub fn insert_account(&mut self, account: &Account) -> i64 {
+        self.account_table.insert_account(account)
     }
 
     pub(crate) fn iter_entity_ids(&mut self) -> IntoIter<i64> {
@@ -134,15 +138,19 @@ impl DataBase {
         match transaction_type {
             TransactionType::Income => self.incomes_table.categories(),
             TransactionType::Expense => self.expenses_table.categories(),
-            _ => Vec::new() // rethink whether it's the correct thing to do
+            _ => Vec::new(), // rethink whether it's the correct thing to do
         }
     }
 
-    pub(crate) fn transaction_subcategories(&self, transaction_type: &TransactionType, category: String) -> Vec<String> {
+    pub(crate) fn transaction_subcategories(
+        &self,
+        transaction_type: &TransactionType,
+        category: String,
+    ) -> Vec<String> {
         match transaction_type {
             TransactionType::Income => self.incomes_table.subcategories(category),
             TransactionType::Expense => self.expenses_table.subcategories(category),
-            _ => Vec::new()
+            _ => Vec::new(),
         }
     }
 

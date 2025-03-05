@@ -1,7 +1,6 @@
 use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
 
 use crate::modules::financial::*;
-use chrono::Local;
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
 use egui_autocomplete::AutoCompleteTextEdit;
@@ -22,6 +21,22 @@ impl AppState {
         self.transaction_account_id = i64::default();
         self.transaction_account_string = String::default();
         self.transaction_type = TransactionType::default();
+    }
+
+    fn clear_entity_fields(&mut self) -> () {
+        self.entity_name = String::default();
+        self.entity_country = String::default();
+        self.entity_type = EntityType::default();
+        self.entity_subtype = String::default();
+    }
+
+    fn clear_account_fields(&mut self) -> () {
+        self.account_name = String::default();
+        self.account_country = String::default();
+        self.account_currency = Currency::default();
+        self.account_type = AccountType::default();
+        self.account_initial_balance = f64::default();
+        self.account_initial_balance_tentative = String::default();
     }
 
     fn are_valid_entity_fields(&self) -> bool {
@@ -62,39 +77,6 @@ impl AppState {
         ((self.transaction_category.len() > 0)
             | (self.transaction_type.is_fund_change() & self.is_valid_transaction_currency()))
             & self.is_valid_transaction_value()
-    }
-
-    pub fn handle_show_input_window(&mut self, ctx: &egui::Context) -> () {
-        ctx.show_viewport_immediate(
-            egui::ViewportId::from_hash_of("input_window"),
-            egui::ViewportBuilder::default()
-                .with_title("Input window")
-                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
-            |ctx, class| {
-                assert!(
-                    class == egui::ViewportClass::Immediate,
-                    "This egui backend doesn't support multiple viewports"
-                );
-
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    if ui.button("Add new entity").clicked() {
-                        // unsure whether to involve show_input_window
-                        self.show_input_entity_window = self.show_input_window & true;
-                    }
-                    if ui.button("Add new account").clicked() {
-                        // unsure whether to involve show_input_window
-                        self.show_input_account_window = self.show_input_window & true;
-                    }
-                    if ui.button("Add new transaction party").clicked() {
-                        self.show_input_party_window = self.show_input_window & true;
-                    }
-                });
-
-                if ctx.input(|i| i.viewport().close_requested()) {
-                    self.show_input_window = false;
-                }
-            },
-        )
     }
 
     pub fn handle_show_input_entity_window(&mut self, ctx: &egui::Context) -> () {
@@ -192,9 +174,9 @@ impl AppState {
                                     self.entity_subtype.clone(),
                                 );
 
-                                self.database.insert_entity(&entity);
+                                self.transaction_entity_id = self.database.insert_entity(&entity);
                                 self.database.save();
-                                self.clear_fields();
+                                self.clear_entity_fields();
 
                                 self.show_input_entity_window = false;
                             }
@@ -323,9 +305,10 @@ impl AppState {
                                     self.account_type.clone(),
                                     self.account_initial_balance,
                                 );
-                                self.database.insert_account(&account);
+
+                                self.transaction_account_id = self.database.insert_account(&account);
                                 self.database.save();
-                                self.clear_fields();
+                                self.clear_account_fields();
 
                                 self.show_input_account_window = false;
                             }
@@ -402,6 +385,7 @@ impl AppState {
                     egui::Grid::new("my_grid")
                         .num_columns(3)
                         .spacing([45.0, 4.0])
+                        .min_col_width(150.0)
                         //.striped(true)
                         .show(ui, |ui| {
                             ui.label("Transaction type:")
@@ -486,6 +470,19 @@ impl AppState {
                                             }
                                         }
                                     });
+                                if ui.button("Add new account").clicked() {
+                                    self.show_input_account_window = true;
+                                }
+                                ui.end_row();
+
+                                ui.label("");
+                                ui.end_row();
+
+                                ui.label("");
+                                ui.end_row();
+
+                                ui.label("");
+                                ui.end_row();
                             } else {
                                 // it is not fund change
                                 ui.label("Transaction entity:")
@@ -504,40 +501,44 @@ impl AppState {
                                             );
                                         }
                                     });
-                            };
-                            ui.end_row();
+                                if ui.button("Add new entity").clicked() {
+                                    self.show_input_entity_window = true;
+                                }
+                                ui.end_row();
 
-                            ui.label("Transaction category:")
-                                .on_hover_text("Category of the transaction.");
-                            ui.add(
-                                AutoCompleteTextEdit::new(
-                                    &mut self.transaction_category,
-                                    self.database.transaction_categories(&self.transaction_type),
-                                )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
-                            );
-                            ui.end_row();
+                                ui.label("Transaction category:")
+                                    .on_hover_text("Category of the transaction.");
+                                ui.add(
+                                    AutoCompleteTextEdit::new(
+                                        &mut self.transaction_category,
+                                        self.database
+                                            .transaction_categories(&self.transaction_type),
+                                    )
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
+                                );
+                                ui.end_row();
 
-                            ui.label("Transaction subcategory:")
-                                .on_hover_text("Subcategory of the transaction.");
-                            ui.add(
-                                AutoCompleteTextEdit::new(
-                                    &mut self.transaction_subcategory,
-                                    self.database.transaction_subcategories(
-                                        &self.transaction_type,
-                                        self.transaction_category.clone(),
-                                    ),
-                                )
-                                .max_suggestions(10)
-                                .highlight_matches(true),
-                            );
-                            ui.end_row();
+                                ui.label("Transaction subcategory:")
+                                    .on_hover_text("Subcategory of the transaction.");
+                                ui.add(
+                                    AutoCompleteTextEdit::new(
+                                        &mut self.transaction_subcategory,
+                                        self.database.transaction_subcategories(
+                                            &self.transaction_type,
+                                            self.transaction_category.clone(),
+                                        ),
+                                    )
+                                    .max_suggestions(10)
+                                    .highlight_matches(true),
+                                );
+                                ui.end_row();
 
-                            ui.label("Transaction description:")
-                                .on_hover_text("Text description of the transaction.");
-                            ui.text_edit_singleline(&mut self.transaction_description);
-                            ui.end_row()
+                                ui.label("Transaction description:")
+                                    .on_hover_text("Text description of the transaction.");
+                                ui.text_edit_singleline(&mut self.transaction_description);
+                                ui.end_row();
+                            }
                         });
 
                     ui.separator();
