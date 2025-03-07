@@ -3,6 +3,7 @@ use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::modules::financial::*;
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
+use egui::{Align, Layout};
 use egui_autocomplete::AutoCompleteTextEdit;
 use egui_extras::*;
 use strum::IntoEnumIterator;
@@ -289,9 +290,9 @@ impl AppState {
                             ui.end_row();
                         });
 
-                    ui.separator();
+                     ui.separator();
                     ui.vertical_centered_justified(|ui| {
-                        if self.are_valid_account_fields() {
+                       if self.are_valid_account_fields() {
                             self.account_initial_balance = self
                                 .account_initial_balance_tentative
                                 .parse::<f64>()
@@ -326,8 +327,8 @@ impl AppState {
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_party_window"),
             egui::ViewportBuilder::default()
-                .with_title("Input party window")
-                .with_inner_size([WINDOW_WIDTH * 1.5, WINDOW_HEIGHT]),
+                .with_title("Party Creation")
+                .with_inner_size([WINDOW_WIDTH / 2.0, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -335,26 +336,87 @@ impl AppState {
                 );
 
                 egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.label("Input window");
+                    StripBuilder::new(ui)
+                        .size(Size::exact(40.0))
+                        .size(Size::remainder().at_least(100.0))
+                        .size(Size::exact(40.0))
+                        .vertical(|mut strip| {
+                            strip.cell(|ui| {
+                                ui.vertical_centered_justified(|ui| {
+                                    if ui.button("Add new transaction").clicked() {
+                                        self.show_input_transaction_window =
+                                            self.show_input_party_window & true;
+                                    }
+                                });
+                                ui.separator();
+                            });
+                            strip.cell(|ui| {
+                                TableBuilder::new(ui)
+                                    .columns(Column::auto().resizable(true).at_least(50.0), 4)
+                                    .striped(true)
+                                    .max_scroll_height(1.0)
+                                    .cell_layout(Layout::right_to_left(Align::Center))
+                                    .header(20.0, |mut header| {
+                                        for column_name in
+                                            ["Transaction Type", "Value", "Currency", "Date"]
+                                        {
+                                            header.col(|ui| {
+                                                ui.strong(column_name).on_hover_text(column_name);
+                                            });
+                                        }
+                                    })
+                                    .body(|mut body| {
+                                        if self.party.is_empty() {
+                                            body.row(30.0, |mut row| {
+                                                row.col(|ui| {
+                                                    ui.label("Nothing");
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label("to");
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label("show");
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label("yet...");
+                                                });
+                                            })
+                                        }
 
-                    ui.label("Transactions:");
-                    for transaction in self.party.iter() {
-                        ui.label(transaction.to_string());
-                    }
+                                        for transaction in self.party.iter() {
+                                            body.row(30.0, |mut row| {
+                                                row.col(|ui| {
+                                                    ui.label(transaction.transaction_type());
+                                                });
 
-                    if ui.button("Add new transaction").clicked() {
-                        self.show_input_transaction_window = self.show_input_party_window & true;
-                    }
+                                                row.col(|ui| {
+                                                    ui.label(format!("{:.2}", transaction.value()));
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label(transaction.currency().to_string());
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label(transaction.date().to_string());
+                                                });
+                                            });
+                                        }
+                                    });
+                            });
+                            strip.cell(|ui| {
+                                ui.separator();
+                                ui.vertical_centered_justified(|ui| {
+                                    if self.party.is_valid() {
+                                        if ui.button("Add party").clicked() {
+                                            self.database.insert_party(&mut self.party);
+                                            self.database.save();
+                                            self.clear_fields();
 
-                    if self.party.is_valid() {
-                        if ui.button("Add party").clicked() {
-                            self.database.insert_party(&mut self.party);
-                            self.database.save();
-                            self.clear_fields();
-
-                            self.show_input_party_window = false;
-                        }
-                    }
+                                            self.show_input_party_window = false;
+                                        }
+                                    }
+                                });
+                            });
+                        });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
                     self.show_input_party_window = false;

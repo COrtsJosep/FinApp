@@ -60,6 +60,10 @@ impl Party {
     pub(crate) fn iter(&mut self) -> Iter<'_, Transaction> {
         self.transactions.iter()
     }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.transactions.is_empty()
+    }
 }
 
 impl Default for Party {
@@ -70,7 +74,10 @@ impl Default for Party {
 
 #[derive(Debug, Hash, PartialEq, Eq, EnumIter)]
 pub enum TransactionType {
-    Income, Expense, Credit, Debit
+    Income,
+    Expense,
+    Credit,
+    Debit,
 }
 
 impl TransactionType {
@@ -79,14 +86,14 @@ impl TransactionType {
             TransactionType::Income => TransactionType::Income,
             TransactionType::Expense => TransactionType::Expense,
             TransactionType::Credit => TransactionType::Credit,
-            TransactionType::Debit => TransactionType::Debit
+            TransactionType::Debit => TransactionType::Debit,
         }
     }
 
     pub(crate) fn is_fund_change(&self) -> bool {
         match self {
             TransactionType::Income | TransactionType::Expense => false,
-            TransactionType::Credit | TransactionType::Debit => true
+            TransactionType::Credit | TransactionType::Debit => true,
         }
     }
 }
@@ -98,16 +105,17 @@ impl Display for TransactionType {
             TransactionType::Income => "Income".to_string(),
             TransactionType::Expense => "Expense".to_string(),
             TransactionType::Credit => "Credit".to_string(),
-            TransactionType::Debit => "Debit".to_string()
+            TransactionType::Debit => "Debit".to_string(),
         };
         write!(f, "{}", str)
     }
 }
 
 impl Default for TransactionType {
-    fn default() -> Self { TransactionType::Income }
+    fn default() -> Self {
+        TransactionType::Income
+    }
 }
-
 
 /// Basic entity of the accounting system. Incomes and expenses reflect what event provoked
 /// the movement, credit and debit record what funds were used.
@@ -157,7 +165,7 @@ impl Transaction {
     }
 
     /// Value getter.
-    fn value(&self) -> f64 {
+    pub(crate) fn value(&self) -> f64 {
         match self {
             Transaction::Income { value, .. }
             | Transaction::Expense { value, .. }
@@ -167,12 +175,32 @@ impl Transaction {
     }
 
     /// Currency getter.
-    fn currency(&self) -> &Currency {
+    pub(crate) fn currency(&self) -> &Currency {
         match self {
             Transaction::Income { currency, .. }
             | Transaction::Expense { currency, .. }
             | Transaction::Credit { currency, .. }
             | Transaction::Debit { currency, .. } => currency,
+        }
+    }
+
+    /// Date getter.
+    pub(crate) fn date(&self) -> &NaiveDate {
+        match self {
+            Transaction::Income { date, .. }
+            | Transaction::Expense { date, .. }
+            | Transaction::Credit { date, .. }
+            | Transaction::Debit { date, .. } => date,
+        }
+    }
+
+    /// Type getter.
+    pub(crate) fn transaction_type(&self) -> String {
+        match self {
+            Transaction::Income { .. } => String::from("Income"),
+            Transaction::Expense { .. } => String::from("Expense"),
+            Transaction::Credit { .. } => String::from("Credit"),
+            Transaction::Debit { .. } => String::from("Debit"),
         }
     }
 }
@@ -182,21 +210,33 @@ impl Display for Transaction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Transaction::Income {
-                value, currency, date, category, subcategory,  .. } => format!(
-                "Income ({category}, {subcategory}): {currency} {value}, at date {date}"
-            ),
+                value,
+                currency,
+                date,
+                category,
+                subcategory,
+                ..
+            } => format!("Income ({category}, {subcategory}): {currency} {value}, at date {date}"),
             Transaction::Expense {
-                value, currency, date, category, subcategory,  .. } => format!(
-                "Expense ({category}, {subcategory}): {currency} {value}, at date {date}"
-            ),
+                value,
+                currency,
+                date,
+                category,
+                subcategory,
+                ..
+            } => format!("Expense ({category}, {subcategory}): {currency} {value}, at date {date}"),
             Transaction::Credit {
-                value, currency, date, .. } => format!(
-                "Credit: {currency} {value}, at date {date}"
-            ),
+                value,
+                currency,
+                date,
+                ..
+            } => format!("Credit: {currency} {value}, at date {date}"),
             Transaction::Debit {
-                value, currency, date, .. } => format!(
-                "Debit: {currency} {value}, at date {date}"
-            ),
+                value,
+                currency,
+                date,
+                ..
+            } => format!("Debit: {currency} {value}, at date {date}"),
         };
         write!(f, "{}", str)
     }
@@ -214,7 +254,7 @@ impl Currency {
         match self {
             Currency::EUR { .. } => Currency::EUR,
             Currency::CHF { .. } => Currency::CHF,
-            Currency::SEK { .. } => Currency::SEK
+            Currency::SEK { .. } => Currency::SEK,
         }
     }
 }
@@ -236,7 +276,6 @@ impl Default for Currency {
         Currency::EUR
     }
 }
-
 
 /// Entity to which the expense is paid or, alternatively, that hands in the income.
 pub struct Entity {
