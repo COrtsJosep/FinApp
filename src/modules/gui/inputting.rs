@@ -3,7 +3,7 @@ use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use crate::modules::financial::*;
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
-use egui::{Align, Layout};
+use egui::{containers, Align, Layout, PopupCloseBehavior};
 use egui_autocomplete::AutoCompleteTextEdit;
 use egui_extras::*;
 use strum::IntoEnumIterator;
@@ -22,6 +22,7 @@ impl AppState {
         self.transaction_account_id = i64::default();
         self.transaction_account_string = String::default();
         self.transaction_type = TransactionType::default();
+        self.transaction_filter = String::default();
     }
 
     fn clear_entity_fields(&mut self) -> () {
@@ -549,18 +550,33 @@ impl AppState {
                                 // it is not fund change
                                 ui.label("Transaction entity:")
                                     .on_hover_text("Entity with whom the transaction is made.");
-                                ComboBox::from_id_salt("Transaction entity")
+                                containers::ComboBox::from_id_salt("Transaction entity")
                                     .selected_text(format!("{}", self.transaction_entity_string))
+                                    .close_behavior(self.transaction_entity_popup)
                                     .show_ui(ui, |ui| {
+                                        if ui
+                                            .text_edit_singleline(&mut self.transaction_filter)
+                                            .has_focus()
+                                        {
+                                            self.transaction_entity_popup =
+                                                PopupCloseBehavior::IgnoreClicks;
+                                        } else {
+                                            self.transaction_entity_popup =
+                                                PopupCloseBehavior::CloseOnClick;
+                                        }
                                         for entity_id in self.database.iter_entity_ids() {
-                                            ui.selectable_value(
-                                                &mut self.transaction_entity_id,
-                                                entity_id,
-                                                format!(
-                                                    "{:}",
-                                                    self.database.entity(entity_id).to_string()
-                                                ),
-                                            );
+                                            let entity_string =
+                                                self.database.entity(entity_id).to_string();
+
+                                            if entity_string
+                                                .contains(self.transaction_filter.as_str())
+                                            {
+                                                ui.selectable_value(
+                                                    &mut self.transaction_entity_id,
+                                                    entity_id,
+                                                    format!("{:}", entity_string),
+                                                );
+                                            }
                                         }
                                     });
                                 if ui.button("Add new entity").clicked() {
