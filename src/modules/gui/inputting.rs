@@ -436,7 +436,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("input_transaction_window"),
             egui::ViewportBuilder::default()
                 .with_title("Input transaction window")
-                .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
+                .with_inner_size([WINDOW_WIDTH * 1.1, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -579,6 +579,18 @@ impl AppState {
                                     .max_suggestions(10)
                                     .highlight_matches(true),
                                 );
+                                if self.transaction_category.len() > 0 {
+                                    ui.colored_label(
+                                        Color32::from_rgb(110, 255, 110),
+                                        "Valid transaction category!",
+                                    );
+                                } else {
+                                    ui.colored_label(
+                                        Color32::from_rgb(255, 0, 0),
+                                        "Please enter a transaction category!",
+                                    );
+                                }
+
                                 ui.end_row();
 
                                 ui.label("Transaction subcategory:")

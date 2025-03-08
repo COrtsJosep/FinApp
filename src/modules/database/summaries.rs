@@ -34,8 +34,8 @@ fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
 }
 
 fn capitalize_every_word(sentence: String) -> String {
-    /// Copied and addapted to my needs from thirtyseconds
-    /// https://docs.rs/thirtyseconds/latest/thirtyseconds/strings/fn.capitalize_every_word.html
+    // Copied and addapted to my needs from thirtyseconds
+    // https://docs.rs/thirtyseconds/latest/thirtyseconds/strings/fn.capitalize_every_word.html
     sentence
         .as_str()
         .split(' ')
