@@ -570,6 +570,8 @@ impl EntityTable {
     /// Iterator over IDs
     pub(crate) fn iter(&self) -> IntoIter<i64> {
         self.data_frame
+            .sort(["name"], Default::default())
+            .unwrap()
             .column(format!("{}_id", EntityTable::name()).as_str())
             .unwrap()
             .i64()
@@ -721,6 +723,8 @@ impl AccountTable {
     /// Iterator over IDs
     pub(crate) fn iter(&self) -> IntoIter<i64> {
         self.data_frame
+            .sort(["name"], Default::default())
+            .unwrap()
             .column(format!("{}_id", AccountTable::name()).as_str())
             .unwrap()
             .i64()
