@@ -67,7 +67,7 @@ impl eframe::App for AppState {
             };
 
             if ui.button("Plotting").clicked() {
-                self.show_plotting_window = true;
+                self.show_monthly_summary_window = true;
             };
         });
 
@@ -87,7 +87,7 @@ impl eframe::App for AppState {
             self.handle_show_input_transaction_window(ctx)
         }
 
-        if self.show_plotting_window {
+        if self.show_monthly_summary_window {
             self.handle_show_monthly_summary_window(ctx)
             // todo!()
         }
