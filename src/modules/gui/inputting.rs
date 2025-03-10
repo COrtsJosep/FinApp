@@ -420,6 +420,7 @@ impl AppState {
                         });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
+                    self.clear_fields();
                     self.show_input_party_window = false;
                 }
             },
