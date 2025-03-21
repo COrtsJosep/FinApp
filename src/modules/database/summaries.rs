@@ -196,12 +196,13 @@ impl DataBase {
 
     pub(crate) fn monthly_summary(&self, date: NaiveDate, currency_to: &Currency) -> String {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
+        print!("Currency exchange loaded");
 
         let month: String = date.format("%Y-%m").to_string();
         let total_monthly_income: f64 = self.total_monthly_income(date, currency_to);
         let mut exchange_date: NaiveDate = last_day_of_month(date);
         if exchange_date > Local::now().date_naive() {
-            exchange_date = Local::now().date_naive()
+            exchange_date = Local::now().date_naive();
         }
 
         let expenses_table: DataFrame = self
@@ -271,7 +272,7 @@ impl DataBase {
         "Subcategory" => ["Total"],
         currency_to.to_string().as_str() => [(100.0 * total_monthly_expenses).round() / 100.0],
         "% Total Expenses" => [100.0],
-        "% Total Income" => [(100.0 * total_monthly_expenses / total_monthly_income).round() / 100.0]
+        "% Total Income" => [(100.0 * 100.0 * total_monthly_expenses / total_monthly_income).round() / 100.0]
         )
         .unwrap();
 
