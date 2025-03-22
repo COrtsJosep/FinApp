@@ -55,7 +55,12 @@ pub struct AppState {
     #[derivative(Default(value = "PopupCloseBehavior::IgnoreClicks"))]
     transaction_entity_popup: PopupCloseBehavior,
 
-    monthly_summary: String,
+    expense_summary_csv: String,
+    #[derivative(Default(value = "Local::now().date_naive()"))]
+    expense_summary_date_from: NaiveDate,
+    #[derivative(Default(value = "Local::now().date_naive()"))]
+    expense_summary_date_to: NaiveDate,
+    expense_summary_currency: Currency,
 }
 
 impl eframe::App for AppState {
