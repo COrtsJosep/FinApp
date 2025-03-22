@@ -6,7 +6,7 @@ use egui::{Align, Layout};
 use egui_extras::*;
 
 impl AppState {
-    pub fn handle_show_monthly_summary_window(&mut self, ctx: &egui::Context) -> () {
+    pub fn handle_show_expense_summary_window(&mut self, ctx: &egui::Context) -> () {
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("input_monthly_summary_window"),
             egui::ViewportBuilder::default()
@@ -68,7 +68,7 @@ impl AppState {
                         });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
-                    self.show_monthly_summary_window = false;
+                    self.show_expense_summary_window = false;
                 }
             },
         )

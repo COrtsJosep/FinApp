@@ -20,7 +20,7 @@ pub struct AppState {
     show_input_party_window: bool,
     show_input_transaction_window: bool,
     show_plotting_window: bool,
-    show_monthly_summary_window: bool,
+    show_expense_summary_window: bool,
 
     database: DataBase,
 
@@ -67,7 +67,7 @@ impl eframe::App for AppState {
             };
 
             if ui.button("Plotting").clicked() {
-                self.show_monthly_summary_window = true;
+                self.show_expense_summary_window = true;
             };
         });
 
@@ -87,8 +87,8 @@ impl eframe::App for AppState {
             self.handle_show_input_transaction_window(ctx)
         }
 
-        if self.show_monthly_summary_window {
-            self.handle_show_monthly_summary_window(ctx)
+        if self.show_expense_summary_window {
+            self.handle_show_expense_summary_window(ctx)
             // todo!()
         }
     }
