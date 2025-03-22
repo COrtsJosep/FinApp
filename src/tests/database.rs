@@ -1,10 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::modules::database::summaries::*;
     use crate::modules::database::DataBase;
     use crate::modules::financial::*;
     use crate::tests::test_helpers::init_party;
-    use chrono::NaiveDate;
     use polars::df;
 
     #[test]
@@ -55,22 +53,5 @@ mod tests {
         let actual_result = data_base.size();
 
         assert!(actual_result.equals(&expected_result));
-    }
-
-    #[test]
-    fn last_date_february() {
-        let date: NaiveDate = NaiveDate::from_ymd_opt(2025, 2, 4).unwrap();
-        let expected_date: NaiveDate = NaiveDate::from_ymd_opt(2025, 2, 28).unwrap();
-        let actual_date: NaiveDate = test_last_day_of_month(date);
-
-        assert_eq!(expected_date, actual_date);
-    }
-
-    fn last_date_last() {
-        let date: NaiveDate = NaiveDate::from_ymd_opt(2025, 1, 31).unwrap();
-        let expected_date: NaiveDate = NaiveDate::from_ymd_opt(2025, 1, 31).unwrap();
-        let actual_date: NaiveDate = test_last_day_of_month(date);
-
-        assert_eq!(expected_date, actual_date);
     }
 }

@@ -1,6 +1,6 @@
 use crate::modules::financial::*;
 use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
-use chrono::Local;
+use chrono::{Local, Months};
 use eframe::egui;
 use egui::{Align, Layout};
 use egui_extras::*;
@@ -19,9 +19,14 @@ impl AppState {
                 );
 
                 if self.monthly_summary == String::default() {
-                    self.monthly_summary = self
-                        .database
-                        .monthly_summary(Local::now().date_naive(), &Currency::CHF);
+                    self.monthly_summary = self.database.expenses_summary(
+                        Local::now()
+                            .date_naive()
+                            .checked_sub_months(Months::new(1))
+                            .unwrap(),
+                        Local::now().date_naive(),
+                        &Currency::CHF,
+                    );
                 }
 
                 let header_line: String =

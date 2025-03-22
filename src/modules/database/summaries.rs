@@ -1,24 +1,10 @@
 use crate::modules::currency_exchange::CurrencyExchange;
 use crate::modules::database::DataBase;
 use crate::modules::financial::Currency;
-use chrono::{Datelike, Days, Local, Months, NaiveDate};
+use chrono::{Local, NaiveDate};
 use polars::prelude::*;
 use std::io::Cursor;
 use std::str::FromStr;
-
-fn last_day_of_month(date: NaiveDate) -> NaiveDate {
-    date.checked_add_months(Months::new(1))
-        .unwrap()
-        .with_day(1)
-        .unwrap()
-        .checked_sub_days(Days::new(1))
-        .unwrap()
-}
-
-#[cfg(test)]
-pub(crate) fn test_last_day_of_month(date: NaiveDate) -> NaiveDate {
-    last_day_of_month(date)
-}
 
 fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
     let mut buffer = Cursor::new(Vec::new());
@@ -45,22 +31,22 @@ fn capitalize_every_word(sentence: String) -> String {
 }
 
 impl DataBase {
-    fn total_monthly_income(&self, date: NaiveDate, currency_to: &Currency) -> f64 {
+    /// Calculates the sum of all the incomes earned between date_from to date_to, both included,
+    /// in the currency currency_to.
+    fn total_income(
+        &self,
+        date_from: NaiveDate,
+        date_to: NaiveDate,
+        currency_to: &Currency,
+    ) -> f64 {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
-
-        let month: String = date.format("%Y-%m").to_string();
-        let mut exchange_date: NaiveDate = last_day_of_month(date);
-        if exchange_date > Local::now().date_naive() {
-            exchange_date = Local::now().date_naive()
-        }
 
         let income_table: DataFrame = self
             .incomes_table
             .data_frame
             .clone()
             .lazy()
-            .with_column(col("date").dt().strftime("%Y-%m").alias("month"))
-            .filter(col("month").eq(lit(month)))
+            .filter(col("date").is_between(lit(date_from), lit(date_to), ClosedInterval::Both))
             .collect()
             .unwrap();
 
@@ -75,7 +61,7 @@ impl DataBase {
             let currency_from =
                 Currency::from_str(currency.unwrap()).expect("Failed to find currency");
             let exchange_rate: f64 =
-                currency_exchange.exchange_currency(&currency_from, currency_to, exchange_date);
+                currency_exchange.exchange_currency(&currency_from, currency_to, date_to);
             exchange_rates.push(exchange_rate);
         }
 
@@ -194,24 +180,22 @@ impl DataBase {
         }
     }
 
-    pub(crate) fn monthly_summary(&self, date: NaiveDate, currency_to: &Currency) -> String {
+    /// Generates a summary table of all expenses between date_from to date_to, expressed in the currency_to
+    pub(crate) fn expenses_summary(
+        &self,
+        date_from: NaiveDate,
+        date_to: NaiveDate,
+        currency_to: &Currency,
+    ) -> String {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
-        print!("Currency exchange loaded");
-
-        let month: String = date.format("%Y-%m").to_string();
-        let total_monthly_income: f64 = self.total_monthly_income(date, currency_to);
-        let mut exchange_date: NaiveDate = last_day_of_month(date);
-        if exchange_date > Local::now().date_naive() {
-            exchange_date = Local::now().date_naive();
-        }
+        let total_income: f64 = self.total_income(date_from, date_to, currency_to);
 
         let expenses_table: DataFrame = self
             .expenses_table
             .data_frame
             .clone()
             .lazy()
-            .with_column(col("date").dt().strftime("%Y-%m").alias("month"))
-            .filter(col("month").eq(lit(month)))
+            .filter(col("date").is_between(lit(date_from), lit(date_to), ClosedInterval::Both))
             .collect()
             .unwrap();
 
@@ -226,7 +210,7 @@ impl DataBase {
             let currency_from =
                 Currency::from_str(currency.unwrap()).expect("Failed to find currency");
             let exchange_rate: f64 =
-                currency_exchange.exchange_currency(&currency_from, currency_to, exchange_date);
+                currency_exchange.exchange_currency(&currency_from, currency_to, date_to);
             exchange_rates.push(exchange_rate);
         }
 
@@ -243,7 +227,7 @@ impl DataBase {
                 (col(currency_to.to_string()) * lit(100) / col(currency_to.to_string()).sum())
                     .round(2)
                     .alias("%_total_expenses"),
-                (col(currency_to.to_string()) * lit(100) / lit(total_monthly_income))
+                (col(currency_to.to_string()) * lit(100) / lit(total_income))
                     .round(2)
                     .alias("%_total_income"),
             ])
@@ -259,7 +243,7 @@ impl DataBase {
             .collect()
             .unwrap();
 
-        let total_monthly_expenses: f64 = summary
+        let total_expenses: f64 = summary
             .column(currency_to.to_string().as_str())
             .unwrap()
             .f64()
@@ -270,9 +254,9 @@ impl DataBase {
         let last_row: DataFrame = df!(
         "Category" => ["Total"],
         "Subcategory" => ["Total"],
-        currency_to.to_string().as_str() => [(100.0 * total_monthly_expenses).round() / 100.0],
+        currency_to.to_string().as_str() => [(100.0 * total_expenses).round() / 100.0],
         "% Total Expenses" => [100.0],
-        "% Total Income" => [(100.0 * 100.0 * total_monthly_expenses / total_monthly_income).round() / 100.0]
+        "% Total Income" => [(100.0 * 100.0 * total_expenses / total_income).round() / 100.0]
         )
         .unwrap();
 
