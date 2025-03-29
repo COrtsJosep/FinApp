@@ -21,6 +21,7 @@ pub struct AppState {
     show_input_transaction_window: bool,
     show_plotting_window: bool,
     show_expense_summary_window: bool,
+    show_fund_stand_window: bool,
 
     database: DataBase,
 
@@ -61,6 +62,9 @@ pub struct AppState {
     #[derivative(Default(value = "Local::now().date_naive()"))]
     expense_summary_date_to: NaiveDate,
     expense_summary_currency: Currency,
+
+    fund_stand_csv: String,
+    fund_stand_currency: Option<Currency>,
 }
 
 impl eframe::App for AppState {
@@ -71,8 +75,17 @@ impl eframe::App for AppState {
                 self.show_input_party_window = true;
             };
 
+            ui.menu_button("Summaries", |ui| {
+                if ui.button("Expenses by Category").clicked() {
+                    self.show_expense_summary_window = true;
+                }
+                if ui.button("Funds by Account").clicked() {
+                    self.show_fund_stand_window = true;
+                }
+            });
+
             if ui.button("Plotting").clicked() {
-                self.show_expense_summary_window = true;
+                todo!();
             };
         });
 
@@ -94,7 +107,10 @@ impl eframe::App for AppState {
 
         if self.show_expense_summary_window {
             self.handle_show_expense_summary_window(ctx)
-            // todo!()
+        }
+
+        if self.show_fund_stand_window {
+            self.handle_show_fund_stand_window(ctx)
         }
     }
 }

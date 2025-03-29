@@ -81,7 +81,7 @@ impl DataBase {
             .unwrap()
     }
 
-    pub(crate) fn current_fund_stand(&self, currency_to: Option<&Currency>) -> DataFrame {
+    pub(crate) fn current_fund_stand(&self, currency_to: Option<&Currency>) -> String {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
 
         let initial_balances: DataFrame = self.account_table.data_frame.clone();
@@ -96,7 +96,7 @@ impl DataBase {
             .collect()
             .expect("Failed to aggregate account values");
 
-        let summary = initial_balances
+        let mut summary = initial_balances
             .lazy()
             .join(
                 funds_table.clone().lazy(),
@@ -130,7 +130,7 @@ impl DataBase {
 
             let exchange_rates: Series = Series::new("exchange_rate".into(), exchange_rates);
 
-            summary
+            summary = summary
                 .lazy()
                 .with_column(exchange_rates.lit())
                 .with_column(
@@ -144,18 +144,18 @@ impl DataBase {
                     col("name"),
                     col("country"),
                     col("account_type"),
-                    col(currency_to.to_string()),
+                    col(currency_to.to_string()).round(2),
                 ])
                 .filter(col(currency_to.to_string()).gt_eq(lit(0.01)))
                 .select([all().name().map(|name| {
-                    Ok(PlSmallStr::from_string(
-                        name.replace("_", " ").to_uppercase(),
-                    ))
+                    Ok(PlSmallStr::from_string(capitalize_every_word(
+                        name.replace("_", " "),
+                    )))
                 })])
                 .collect()
                 .unwrap()
         } else {
-            summary
+            summary = summary
                 .clone()
                 .lazy()
                 .sort(
@@ -167,17 +167,19 @@ impl DataBase {
                     col("country"),
                     col("currency"),
                     col("account_type"),
-                    col("total_value"),
+                    col("total_value").round(2),
                 ])
-                .filter(col("total_value").gt_eq(lit(0.01)))
+                .filter(col("total_value").abs().gt_eq(lit(0.01)))
                 .select([all().name().map(|name| {
-                    Ok(PlSmallStr::from_string(
-                        name.replace("_", " ").to_uppercase(),
-                    ))
+                    Ok(PlSmallStr::from_string(capitalize_every_word(
+                        name.replace("_", " "),
+                    )))
                 })])
                 .collect()
                 .unwrap()
         }
+
+        data_frame_to_csv_string(&mut summary)
     }
 
     /// Generates a summary table of all expenses between date_from to date_to, expressed in the currency_to
