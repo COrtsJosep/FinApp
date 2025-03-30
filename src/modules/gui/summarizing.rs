@@ -183,17 +183,9 @@ impl AppState {
                                         .body(|mut body| {
                                             for row_line in row_lines {
                                                 body.row(30.0, |mut row_ui| {
-                                                    let mut is_last_row: bool = false;
                                                     for element in row_line.split(",") {
-                                                        if element == "Total" {
-                                                            is_last_row = true;
-                                                        }
                                                         row_ui.col(|ui| {
-                                                            if is_last_row {
-                                                                ui.strong(element);
-                                                            } else {
                                                                 ui.label(element);
-                                                            }
                                                         });
                                                     }
                                                 });
