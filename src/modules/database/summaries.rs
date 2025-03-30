@@ -1,34 +1,9 @@
 use crate::modules::currency_exchange::CurrencyExchange;
-use crate::modules::database::DataBase;
+use crate::modules::database::{capitalize_every_word, data_frame_to_csv_string, DataBase};
 use crate::modules::financial::Currency;
 use chrono::{Local, NaiveDate};
 use polars::prelude::*;
-use std::io::Cursor;
 use std::str::FromStr;
-
-fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
-    let mut buffer = Cursor::new(Vec::new());
-
-    CsvWriter::new(&mut buffer)
-        .include_header(true)
-        .finish(data_frame)
-        .unwrap();
-
-    String::from_utf8(buffer.into_inner())
-        .unwrap()
-        .replace(".0,", ".00,")
-}
-
-fn capitalize_every_word(sentence: String) -> String {
-    // Copied and addapted to my needs from thirtyseconds
-    // https://docs.rs/thirtyseconds/latest/thirtyseconds/strings/fn.capitalize_every_word.html
-    sentence
-        .as_str()
-        .split(' ')
-        .map(|word| format!("{}{}", &word[..1].to_uppercase(), &word[1..]))
-        .collect::<Vec<_>>()
-        .join(" ")
-}
 
 impl DataBase {
     /// Calculates the sum of all the incomes earned between date_from to date_to, both included,
