@@ -17,7 +17,8 @@ mod tests {
             ],
             "account_id" => [0i64, 0i64],
             "party_id" => [0i64, 1i64],
-        ).unwrap();
+        )
+        .unwrap();
 
         FundsTable { data_frame }
     }
@@ -134,5 +135,22 @@ mod tests {
         let expected_last_id = AnyValue::Int64(1i64);
 
         assert_eq!(actual_last_id, &expected_last_id)
+    }
+
+    #[test]
+    fn correct_income_table_delete() {
+        let mut income_table = *IncomeTable::init();
+        let orig_size = income_table.data_frame.size();
+        let party_0_size = income_table
+            .data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").eq(lit(0)))
+            .collect()
+            .unwrap()
+            .size();
+        income_table.delete_party(0);
+
+        assert_eq!(orig_size - party_0_size, income_table.data_frame.size())
     }
 }

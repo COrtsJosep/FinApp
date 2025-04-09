@@ -222,6 +222,17 @@ impl IncomeTable {
             .map(|s| s.to_string())
             .collect()
     }
+
+    // Deletes records corresponding to a party.
+    pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
+        self.data_frame = self
+            .data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap();
+    }
 }
 
 pub struct ExpensesTable {
@@ -358,6 +369,17 @@ impl ExpensesTable {
             .map(|s| s.to_string())
             .collect()
     }
+
+    // Deletes records corresponding to a party.
+    pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
+        self.data_frame = self
+            .data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap();
+    }
 }
 
 pub struct FundsTable {
@@ -473,6 +495,17 @@ impl FundsTable {
             );
         }
     }
+
+    // Deletes records corresponding to a party.
+    pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
+        self.data_frame = self
+            .data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap();
+    }
 }
 
 pub struct PartyTable {
@@ -528,6 +561,17 @@ impl PartyTable {
             .data_frame
             .vstack(&record)
             .expect(format!("Failed to insert {} record", PartyTable::name()).as_str())
+    }
+
+    // Deletes records corresponding to a party.
+    pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
+        self.data_frame = self
+            .data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap();
     }
 }
 

@@ -51,7 +51,7 @@ impl DataBase {
             .unwrap()
             .lazy()
             .sort(
-                ["date", "value"],
+                ["date", "party_id"],
                 SortMultipleOptions::default().with_order_descending_multi([true, true]),
             )
             .select([all().name().map(|name| {

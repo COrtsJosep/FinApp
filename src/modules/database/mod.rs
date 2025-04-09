@@ -183,6 +183,14 @@ impl DataBase {
     pub(crate) fn entity_subtypes(&self) -> Vec<String> {
         self.entity_table.subtypes()
     }
+
+    /// Deletes from the database all records from the party.
+    pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
+        self.incomes_table.delete_party(party_id);
+        self.expenses_table.delete_party(party_id);
+        self.funds_table.delete_party(party_id);
+        self.party_table.delete_party(party_id);
+    }
 }
 
 impl Default for DataBase {
