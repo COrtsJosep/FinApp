@@ -197,6 +197,12 @@ impl DataBase {
         for income_id in self.incomes_table.iter_party(party_id) {
             party.add_transaction(self.incomes_table.transaction(income_id));
         }
+        for expense_id in self.expenses_table.iter_party(party_id) {
+            party.add_transaction(self.expenses_table.transaction(expense_id));
+        }
+        for fund_id in self.funds_table.iter_party(party_id) {
+            party.add_transaction(self.funds_table.transaction(fund_id));
+        }
 
         party
     }

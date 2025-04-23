@@ -239,7 +239,7 @@ impl IncomeTable {
         self.data_frame
             .clone()
             .lazy()
-            .filter(col("party_id").neq(lit(party_id)))
+            .filter(col("party_id").eq(lit(party_id)))
             .collect()
             .unwrap()
             .column(format!("{}_id", IncomeTable::name()).as_str())
@@ -291,7 +291,7 @@ impl IncomeTable {
                     .unwrap(),
             )
             .unwrap(),
-            date: date,
+            date,
             category: record
                 .column("category")
                 .unwrap()
@@ -478,7 +478,7 @@ impl ExpensesTable {
         self.data_frame
             .clone()
             .lazy()
-            .filter(col("party_id").neq(lit(party_id)))
+            .filter(col("party_id").eq(lit(party_id)))
             .collect()
             .unwrap()
             .column(format!("{}_id", ExpensesTable::name()).as_str())
@@ -530,7 +530,7 @@ impl ExpensesTable {
                     .unwrap(),
             )
             .unwrap(),
-            date: date,
+            date,
             category: record
                 .column("category")
                 .unwrap()
@@ -696,7 +696,7 @@ impl FundsTable {
         self.data_frame
             .clone()
             .lazy()
-            .filter(col("party_id").neq(lit(party_id)))
+            .filter(col("party_id").eq(lit(party_id)))
             .collect()
             .unwrap()
             .column(format!("{}_id", FundsTable::name()).as_str())
@@ -712,7 +712,7 @@ impl FundsTable {
     pub(crate) fn transaction(&self, id: i64) -> Transaction {
         let mask = self
             .data_frame
-            .column(format!("{}_id", IncomeTable::name()).as_str())
+            .column(format!("{}_id", FundsTable::name()).as_str())
             .unwrap()
             .i64()
             .unwrap()
@@ -755,7 +755,7 @@ impl FundsTable {
         )
         .unwrap();
         let account_id = record
-            .column("entity_id")
+            .column("account_id")
             .unwrap()
             .i64()
             .unwrap()
@@ -772,7 +772,7 @@ impl FundsTable {
         } else {
             // then it is debit
             Transaction::Debit {
-                value,
+                value: -1.0 * value,
                 currency,
                 date,
                 account_id,

@@ -1,6 +1,5 @@
-use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
-
 use crate::modules::financial::*;
+use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use eframe::egui;
 use eframe::egui::{Color32, ComboBox};
 use egui::{containers, Align, Layout, PopupCloseBehavior};
@@ -353,14 +352,18 @@ impl AppState {
                             });
                             strip.cell(|ui| {
                                 TableBuilder::new(ui)
-                                    .columns(Column::auto().resizable(true).at_least(50.0), 4)
+                                    .columns(Column::auto().resizable(true).at_least(50.0), 5)
                                     .striped(true)
                                     .max_scroll_height(1.0)
                                     .cell_layout(Layout::right_to_left(Align::Center))
                                     .header(20.0, |mut header| {
-                                        for column_name in
-                                            ["Transaction Type", "Value", "Currency", "Date"]
-                                        {
+                                        for column_name in [
+                                            "Transaction Type",
+                                            "Value",
+                                            "Currency",
+                                            "Date",
+                                            "Action",
+                                        ] {
                                             header.col(|ui| {
                                                 ui.strong(column_name).on_hover_text(column_name);
                                             });
@@ -379,17 +382,21 @@ impl AppState {
                                                     ui.label("show");
                                                 });
                                                 row.col(|ui| {
-                                                    ui.label("yet...");
+                                                    ui.label("here");
+                                                });
+                                                row.col(|ui| {
+                                                    ui.label("yet");
                                                 });
                                             })
                                         }
 
-                                        for transaction in self.party.iter() {
+                                        let mut i_remove = 0;
+                                        let mut remove = false;
+                                        for (i, transaction) in self.party.iter().enumerate() {
                                             body.row(30.0, |mut row| {
                                                 row.col(|ui| {
                                                     ui.label(transaction.transaction_type());
                                                 });
-
                                                 row.col(|ui| {
                                                     ui.label(format!("{:.2}", transaction.value()));
                                                 });
@@ -399,7 +406,99 @@ impl AppState {
                                                 row.col(|ui| {
                                                     ui.label(transaction.date().to_string());
                                                 });
+                                                row.col(|ui| {
+                                                    if ui
+                                                        .button("Edit/Remove")
+                                                        .on_hover_text(
+                                                            "Removes transaction from the party",
+                                                        )
+                                                        .clicked()
+                                                    {
+                                                        i_remove = i;
+                                                        remove = true;
+                                                    }
+                                                });
                                             });
+                                        }
+                                        if remove {
+                                            let removed_transaction: Transaction =
+                                                self.party.remove(i_remove);
+
+                                            match removed_transaction {
+                                                // unpack the attributes of
+                                                // the transaction
+                                                Transaction::Income {
+                                                    value,
+                                                    currency,
+                                                    date,
+                                                    category,
+                                                    subcategory,
+                                                    description,
+                                                    entity_id,
+                                                } => {
+                                                    self.transaction_type = TransactionType::Income;
+                                                    self.transaction_value = value;
+                                                    self.transaction_value_tentative =
+                                                        value.to_string();
+                                                    self.transaction_currency = currency;
+                                                    self.transaction_date = date;
+                                                    self.transaction_category = category;
+                                                    self.transaction_subcategory = subcategory;
+                                                    self.transaction_description = description;
+                                                    self.transaction_entity_id = entity_id;
+                                                }
+                                                Transaction::Expense {
+                                                    value,
+                                                    currency,
+                                                    date,
+                                                    category,
+                                                    subcategory,
+                                                    description,
+                                                    entity_id,
+                                                } => {
+                                                    self.transaction_type =
+                                                        TransactionType::Expense;
+                                                    self.transaction_value = value;
+                                                    self.transaction_value_tentative =
+                                                        value.to_string();
+                                                    self.transaction_currency = currency;
+                                                    self.transaction_date = date;
+                                                    self.transaction_category = category;
+                                                    self.transaction_subcategory = subcategory;
+                                                    self.transaction_description = description;
+                                                    self.transaction_entity_id = entity_id;
+                                                }
+                                                Transaction::Credit {
+                                                    value,
+                                                    currency,
+                                                    date,
+                                                    account_id,
+                                                } => {
+                                                    self.transaction_type = TransactionType::Credit;
+                                                    self.transaction_value = value;
+                                                    self.transaction_value_tentative =
+                                                        value.to_string();
+                                                    self.transaction_currency = currency;
+                                                    self.transaction_date = date;
+                                                    self.transaction_account_id = account_id;
+                                                }
+                                                Transaction::Debit {
+                                                    value,
+                                                    currency,
+                                                    date,
+                                                    account_id,
+                                                } => {
+                                                    self.transaction_type = TransactionType::Debit;
+                                                    self.transaction_value = value;
+                                                    self.transaction_value_tentative =
+                                                        value.to_string();
+                                                    self.transaction_currency = currency;
+                                                    self.transaction_date = date;
+                                                    self.transaction_account_id = account_id;
+                                                }
+                                            }
+
+                                            self.show_input_transaction_window = true;
                                         }
                                     });
                             });

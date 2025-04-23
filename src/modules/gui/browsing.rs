@@ -1,9 +1,7 @@
-use crate::modules::financial::*;
 use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
 use eframe::egui;
-use egui::{Align, ComboBox, Layout};
+use egui::{Align, Layout};
 use egui_extras::*;
-use strum::IntoEnumIterator;
 
 impl AppState {
     pub fn handle_show_browse_window(&mut self, ctx: &egui::Context) -> () {
@@ -32,10 +30,9 @@ impl AppState {
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 egui::Grid::new("last_transactions")
-                                    .num_columns(3)
+                                    .num_columns(1)
                                     .spacing([45.0, 4.0])
                                     .show(ui, |ui| {
-                                        ui.label("");
                                         if ui.button("Generate!").clicked() {
                                             self.last_transactions_csv =
                                                 self.database.last_transactions(10);
@@ -58,10 +55,28 @@ impl AppState {
                                     .body(|mut body| {
                                         for row_line in row_lines {
                                             body.row(30.0, |mut row_ui| {
+                                                let mut i = 0;
                                                 for element in row_line.split(",") {
                                                     row_ui.col(|ui| {
-                                                        ui.label(element);
+                                                        if i == 8 {
+                                                            // index of the last column
+                                                            if ui.button("Edit/Remove").on_hover_text("Removes the party from the database, and launches the input menu with an equal party already loaded").clicked() {
+                                                                // i = 0;
+                                                                let party_id: i64 =
+                                                                    element.parse().unwrap();
+                                                                self.party = self.database.party(party_id);
+                                                                self.database.delete_party(party_id);
+                                                                self.database.save();
+
+                                                                self.show_input_party_window = true;
+                                                                self.show_browse_window = false;
+                                                            }
+                                                        } else {
+                                                            ui.label(element);
+                                                        }
                                                     });
+
+                                                    i += 1;
                                                 }
                                             });
                                         }
