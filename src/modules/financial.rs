@@ -64,6 +64,10 @@ impl Party {
     pub(crate) fn is_empty(&self) -> bool {
         self.transactions.is_empty()
     }
+
+    pub(crate) fn remove(&mut self, i: usize) -> () {
+        self.transactions.remove(i);
+    }
 }
 
 impl Default for Party {
