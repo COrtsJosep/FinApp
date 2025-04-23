@@ -223,7 +223,7 @@ impl IncomeTable {
             .collect()
     }
 
-    // Deletes records corresponding to a party.
+    /// Deletes records corresponding to a party.
     pub(crate) fn delete_party(&mut self, party_id: i64) -> () {
         self.data_frame = self
             .data_frame
@@ -232,6 +232,98 @@ impl IncomeTable {
             .filter(col("party_id").neq(lit(party_id)))
             .collect()
             .unwrap();
+    }
+
+    /// Returns iterator of income_ids that correspond to the given party_id
+    pub(crate) fn iter_party(&self, party_id: i64) -> IntoIter<i64> {
+        self.data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap()
+            .column(format!("{}_id", IncomeTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
+    }
+
+    /// Returns entity given ID
+    pub(crate) fn transaction(&self, id: i64) -> Transaction {
+        let mask = self
+            .data_frame
+            .column(format!("{}_id", IncomeTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .equal(id);
+
+        let record = self.data_frame.filter(&mask).unwrap().clone();
+        let date = record
+            .column("date")
+            .unwrap()
+            .date()
+            .unwrap()
+            .as_date_iter()
+            .next()
+            .unwrap()
+            .unwrap()
+            .clone();
+
+        Transaction::Income {
+            value: record
+                .column("value")
+                .unwrap()
+                .f64()
+                .unwrap()
+                .get(0)
+                .unwrap(),
+            currency: Currency::from_str(
+                record
+                    .column("currency")
+                    .unwrap()
+                    .str()
+                    .unwrap()
+                    .get(0)
+                    .unwrap(),
+            )
+            .unwrap(),
+            date: date,
+            category: record
+                .column("category")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            subcategory: record
+                .column("subcategory")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            description: record
+                .column("description")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            entity_id: record
+                .column("entity_id")
+                .unwrap()
+                .i64()
+                .unwrap()
+                .get(0)
+                .unwrap(),
+        }
     }
 }
 
@@ -380,6 +472,98 @@ impl ExpensesTable {
             .collect()
             .unwrap();
     }
+
+    /// Returns iterator of expenses_ids that correspond to the given party_id
+    pub(crate) fn iter_party(&self, party_id: i64) -> IntoIter<i64> {
+        self.data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap()
+            .column(format!("{}_id", ExpensesTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
+    }
+
+    /// Returns entity given ID
+    pub(crate) fn transaction(&self, id: i64) -> Transaction {
+        let mask = self
+            .data_frame
+            .column(format!("{}_id", ExpensesTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .equal(id);
+
+        let record = self.data_frame.filter(&mask).unwrap().clone();
+        let date = record
+            .column("date")
+            .unwrap()
+            .date()
+            .unwrap()
+            .as_date_iter()
+            .next()
+            .unwrap()
+            .unwrap()
+            .clone();
+
+        Transaction::Expense {
+            value: record
+                .column("value")
+                .unwrap()
+                .f64()
+                .unwrap()
+                .get(0)
+                .unwrap(),
+            currency: Currency::from_str(
+                record
+                    .column("currency")
+                    .unwrap()
+                    .str()
+                    .unwrap()
+                    .get(0)
+                    .unwrap(),
+            )
+            .unwrap(),
+            date: date,
+            category: record
+                .column("category")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            subcategory: record
+                .column("subcategory")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            description: record
+                .column("description")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap()
+                .to_string(),
+            entity_id: record
+                .column("entity_id")
+                .unwrap()
+                .i64()
+                .unwrap()
+                .get(0)
+                .unwrap(),
+        }
+    }
 }
 
 pub struct FundsTable {
@@ -505,6 +689,95 @@ impl FundsTable {
             .filter(col("party_id").neq(lit(party_id)))
             .collect()
             .unwrap();
+    }
+
+    /// Returns iterator of funds_ids that correspond to the given party_id
+    pub(crate) fn iter_party(&self, party_id: i64) -> IntoIter<i64> {
+        self.data_frame
+            .clone()
+            .lazy()
+            .filter(col("party_id").neq(lit(party_id)))
+            .collect()
+            .unwrap()
+            .column(format!("{}_id", FundsTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .into_no_null_iter()
+            .collect::<Vec<i64>>()
+            .into_iter()
+    }
+
+    /// Returns entity given ID
+    pub(crate) fn transaction(&self, id: i64) -> Transaction {
+        let mask = self
+            .data_frame
+            .column(format!("{}_id", IncomeTable::name()).as_str())
+            .unwrap()
+            .i64()
+            .unwrap()
+            .equal(id);
+
+        let record = self.data_frame.filter(&mask).unwrap().clone();
+        let date = record
+            .column("date")
+            .unwrap()
+            .date()
+            .unwrap()
+            .as_date_iter()
+            .next()
+            .unwrap()
+            .unwrap()
+            .clone();
+        let transaction_type = record
+            .column(format!("{}_type", FundsTable::name()).as_str())
+            .unwrap()
+            .str()
+            .unwrap()
+            .get(0)
+            .unwrap()
+            .to_string();
+        let value = record
+            .column("value")
+            .unwrap()
+            .f64()
+            .unwrap()
+            .get(0)
+            .unwrap();
+        let currency = Currency::from_str(
+            record
+                .column("currency")
+                .unwrap()
+                .str()
+                .unwrap()
+                .get(0)
+                .unwrap(),
+        )
+        .unwrap();
+        let account_id = record
+            .column("entity_id")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .get(0)
+            .unwrap();
+
+        if transaction_type == String::from("Credit") {
+            Transaction::Credit {
+                value,
+                currency,
+                date,
+                account_id,
+            }
+        } else {
+            // then it is debit
+            Transaction::Debit {
+                value,
+                currency,
+                date,
+                account_id,
+            }
+        }
     }
 }
 

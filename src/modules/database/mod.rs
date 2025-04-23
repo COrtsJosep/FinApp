@@ -191,6 +191,15 @@ impl DataBase {
         self.funds_table.delete_party(party_id);
         self.party_table.delete_party(party_id);
     }
+
+    pub(crate) fn party(&self, party_id: i64) -> Party {
+        let mut party: Party = Party::new(Vec::new());
+        for income_id in self.incomes_table.iter_party(party_id) {
+            party.add_transaction(self.incomes_table.transaction(income_id));
+        }
+
+        party
+    }
 }
 
 impl Default for DataBase {

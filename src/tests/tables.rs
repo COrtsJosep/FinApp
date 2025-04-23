@@ -153,4 +153,26 @@ mod tests {
 
         assert_eq!(orig_size - party_0_size, income_table.data_frame.size())
     }
+
+    #[test]
+    fn correct_income_table_transaction() {
+        let mut income_table = *IncomeTable::new();
+        let original_transaction = Transaction::Income {
+            value: 0.0,
+            currency: Currency::EUR,
+            date: NaiveDate::default(),
+            category: String::from("Test category"),
+            subcategory: String::from("Test subcategory"),
+            description: String::from("Test description"),
+            entity_id: 0,
+        };
+        income_table.insert_transaction(&original_transaction, 0);
+        let returned_transaction = income_table.transaction(0);
+
+        assert!(
+            (original_transaction.value() == returned_transaction.value())
+                & (original_transaction.currency() == returned_transaction.currency())
+                & (original_transaction.date() == returned_transaction.date())
+        );
+    }
 }
