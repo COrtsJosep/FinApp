@@ -69,6 +69,7 @@ pub struct AppState {
 
     last_transactions_csv: String,
     last_transactions_n: usize,
+    last_transactions_n_temptative: String,
 }
 
 impl eframe::App for AppState {

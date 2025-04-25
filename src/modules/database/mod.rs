@@ -19,6 +19,8 @@ fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
     String::from_utf8(buffer.into_inner())
         .unwrap()
         .replace(".0,", ".00,")
+        .trim_end_matches("\n")
+        .to_string()
 }
 
 fn capitalize_every_word(sentence: String) -> String {
