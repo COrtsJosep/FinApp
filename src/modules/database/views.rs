@@ -75,8 +75,7 @@ impl DataBase {
             .lazy()
             .select([all().exclude(["fund_movement_id"])])
             .collect()
-            .unwrap()
-            .head(Some(n));
+            .unwrap();
 
         let accounts_table: DataFrame = self
             .account_table
@@ -91,6 +90,15 @@ impl DataBase {
         let mut last_fund_movements = funds_table
             .inner_join(&accounts_table, ["account_id"], ["account_id"])
             .unwrap()
+            .select([
+                "fund_movement_type",
+                "date",
+                "value",
+                "currency",
+                "account_name",
+                "party_id",
+            ])
+            .unwrap()
             .lazy()
             .sort(
                 ["date", "party_id"],
@@ -102,7 +110,8 @@ impl DataBase {
                 )))
             })])
             .collect()
-            .unwrap();
+            .unwrap()
+            .head(Some(n));
 
         data_frame_to_csv_string(&mut last_fund_movements)
     }

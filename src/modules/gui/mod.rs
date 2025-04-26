@@ -22,7 +22,8 @@ pub struct AppState {
     show_input_transaction_window: bool,
     show_expense_summary_window: bool,
     show_fund_stand_window: bool,
-    show_browse_window: bool,
+    show_browse_last_transactions_window: bool,
+    show_browse_last_fund_movements_window: bool,
 
     database: DataBase,
 
@@ -70,6 +71,10 @@ pub struct AppState {
     last_transactions_csv: String,
     last_transactions_n: usize,
     last_transactions_n_temptative: String,
+
+    last_fund_movements_csv: String,
+    last_fund_movements_n: usize,
+    last_fund_movements_n_temptative: String,
 }
 
 impl eframe::App for AppState {
@@ -90,13 +95,17 @@ impl eframe::App for AppState {
             });
 
             if ui.button("Plotting").clicked() {
-                self.database.last_transactions(10);
                 todo!();
             };
 
-            if ui.button("Browsing").clicked() {
-                self.show_browse_window = true;
-            }
+            ui.menu_button("Browsing", |ui| {
+                if ui.button("Last transactions").clicked() {
+                    self.show_browse_last_transactions_window = true;
+                }
+                if ui.button("Last fund movements").clicked() {
+                    self.show_browse_last_fund_movements_window = true;
+                }
+            })
         });
 
         if self.show_input_entity_window {
@@ -123,8 +132,12 @@ impl eframe::App for AppState {
             self.handle_show_fund_stand_window(ctx)
         }
 
-        if self.show_browse_window {
-            self.handle_show_browse_window(ctx)
+        if self.show_browse_last_transactions_window {
+            self.handle_show_browse_last_transactions_window(ctx)
+        }
+
+        if self.show_browse_last_fund_movements_window {
+            self.handle_show_browse_last_fund_movements_window(ctx);
         }
     }
 }
