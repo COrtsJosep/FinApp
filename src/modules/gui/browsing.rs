@@ -1,5 +1,5 @@
 use crate::modules::gui::{AppState, WINDOW_HEIGHT, WINDOW_WIDTH};
-use eframe::egui;
+use eframe::egui::ComboBox;
 use egui::{Align, Color32, Layout};
 use egui_extras::*;
 
@@ -128,6 +128,15 @@ impl AppState {
     }
 
     pub fn handle_show_browse_last_fund_movements_window(&mut self, ctx: &egui::Context) -> () {
+        if self.browse_account_id >= 0 {
+            self.browse_account_string = self
+                .database
+                .account(self.browse_account_id)
+                .to_string();
+            } else {
+                self.browse_account_string = String::from("All accounts");
+        }
+
         ctx.show_viewport_immediate(
             egui::ViewportId::from_hash_of("browse_last_fund_movements_window"),
             egui::ViewportBuilder::default()
@@ -170,6 +179,33 @@ impl AppState {
                                             );
                                         }
                                         ui.end_row();
+
+                                        ui.label("Account:")
+                                            .on_hover_text("Account to filter for.");
+                                        ComboBox::from_id_salt("Account")
+                                            .selected_text(format!("{}", self.browse_account_string))
+                                            .show_ui(ui, |ui| {
+                                                ui.selectable_value(
+                                                    &mut self.browse_account_id, 
+                                                    -1, 
+                                                    String::from("All accounts")
+                                                );
+                                                for account_id in self.database.iter_account_ids() {
+                                                    ui.selectable_value(
+                                                        &mut self.browse_account_id,
+                                                        account_id,
+                                                        format!(
+                                                            "{:}",
+                                                            self.database
+                                                            .account(account_id)
+                                                            .to_string()
+                                                        ),
+                                                    );
+
+                                                }
+                                            });
+                                        ui.label("");
+                                        ui.end_row();
                                     });
                                 ui.separator();
                                 ui.vertical_centered_justified(|ui| {
@@ -179,7 +215,7 @@ impl AppState {
                                                 .last_fund_movements_n_temptative
                                                 .parse::<usize>()
                                                 .expect("Failed to parse the number of last fund_movements.");
-                                            self.last_fund_movements_csv = self.database.last_fund_movements(self.last_fund_movements_n);
+                                            self.last_fund_movements_csv = self.database.last_fund_movements(self.last_fund_movements_n, self.browse_account_id);
                                         }
                                     }
                                 });

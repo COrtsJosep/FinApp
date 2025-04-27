@@ -196,7 +196,7 @@ impl AppState {
                         });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
-                    self.show_expense_summary_window = false;
+                    self.show_fund_stand_window = false;
                 }
             },
         )

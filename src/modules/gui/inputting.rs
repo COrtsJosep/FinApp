@@ -354,7 +354,6 @@ impl AppState {
                                 TableBuilder::new(ui)
                                     .columns(Column::auto().resizable(true).at_least(50.0), 5)
                                     .striped(true)
-                                    .max_scroll_height(1.0)
                                     .cell_layout(Layout::right_to_left(Align::Center))
                                     .header(20.0, |mut header| {
                                         for column_name in [

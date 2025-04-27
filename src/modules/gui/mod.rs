@@ -75,6 +75,10 @@ pub struct AppState {
     last_fund_movements_csv: String,
     last_fund_movements_n: usize,
     last_fund_movements_n_temptative: String,
+
+    #[derivative(Default(value = "-1"))]
+    browse_account_id: i64,
+    browse_account_string: String,
 }
 
 impl eframe::App for AppState {

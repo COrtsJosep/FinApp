@@ -67,8 +67,8 @@ impl DataBase {
     }
 
     /// Returns a csv in String format with the last n fund movements.
-    pub(crate) fn last_fund_movements(&self, n: usize) -> String {
-        let funds_table: DataFrame = self
+    pub(crate) fn last_fund_movements(&self, n: usize, account_id: i64) -> String {
+        let mut funds_table: DataFrame = self
             .funds_table
             .data_frame
             .clone()
@@ -76,6 +76,14 @@ impl DataBase {
             .select([all().exclude(["fund_movement_id"])])
             .collect()
             .unwrap();
+
+        if account_id >= 0 {
+            funds_table = funds_table
+                .lazy()
+                .filter(col("account_id").eq(lit(account_id)))
+                .collect()
+                .unwrap();
+        }
 
         let accounts_table: DataFrame = self
             .account_table
