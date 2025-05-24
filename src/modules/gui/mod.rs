@@ -91,6 +91,8 @@ pub struct AppState {
 
 impl eframe::App for AppState {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) -> () {
+        egui_extras::install_image_loaders(ctx);
+
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.label("Welcome to you personal finances app!");
             if ui.button("Add transactions").clicked() {

@@ -55,14 +55,15 @@ impl AppState {
                                             self.database.funds_evolution(
                                                 &self.fund_evolution_plot_currency,
                                             );
+
+                                            // forget the old one
+                                            ui.ctx().forget_all_images();
                                         }
                                     });
                                 ui.separator();
                             });
                             strip.cell(|ui| {
-                                ui.add(egui::Image::new(egui::include_image!(
-                                    "../../../figures/funds_evolution.png"
-                                )));
+                                ui.image("file://figures/funds_evolution.png");
                                 ui.separator();
                             });
                         });
@@ -144,14 +145,14 @@ impl AppState {
                                                 &self.expense_category_plot_currency,
                                                 &self.expense_category_plot_type,
                                             );
+
+                                            ui.ctx().forget_all_images();
                                         }
                                     });
                                 ui.separator();
                             });
                             strip.cell(|ui| {
-                                ui.add(egui::Image::new(egui::include_image!(
-                                    "../../../figures/monthly_expenses.png"
-                                )));
+                                ui.image("file://figures/monthly_expenses.png");
                                 ui.separator();
                             });
                         });

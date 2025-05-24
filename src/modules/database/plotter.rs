@@ -170,14 +170,13 @@ impl DataBase {
 
         // Then create the plot
         let root =
-            BitMapBackend::new("figures/funds_evolution.png", (800, 600)).into_drawing_area();
+            BitMapBackend::new("figures/funds_evolution.png", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to fill plotting root");
 
         let mut chart = ChartBuilder::on(&root)
             .caption("Evolution of Total Funds", ("sans-serif", 20).into_font())
-            .margin(10)
-            .x_label_area_size(30)
-            .y_label_area_size(40)
+            .set_label_area_size(LabelAreaPosition::Left, 60)
+            .set_label_area_size(LabelAreaPosition::Bottom, 60)
             .build_cartesian_2d(
                 dates[0]..dates[dates.len() - 1],
                 0.0..values.iter().cloned().fold(0. / 0., f64::max),
@@ -187,8 +186,10 @@ impl DataBase {
         chart
             .configure_mesh()
             .x_desc("Time")
+            .x_label_style(("sans-serif", 15).into_font())
             .y_desc(currency_to.to_string().as_str())
             .y_label_formatter(&|y| format!("{:.0}", *y))
+            .y_label_style(("sans-serif", 15).into_font())
             .draw()
             .expect("Failed to draw");
 
@@ -222,7 +223,6 @@ impl DataBase {
 
         // Finally save the plot
         root.present().expect("Failed to present plot");
-        println!("Plot saved to 'line_plot.png'");
     }
 
     // Creates a stacked barplot of monthly expenses. One column per month, split into
@@ -313,7 +313,7 @@ impl DataBase {
 
         // Initialize the plot.
         let root =
-            BitMapBackend::new("figures/monthly_expenses.png.png", (800, 640)).into_drawing_area();
+            BitMapBackend::new("figures/monthly_expenses.png", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to set chart background");
 
         // Calculate the maximum total expenses, among all months, to have the
@@ -352,7 +352,6 @@ impl DataBase {
 
         // Initialize the plotted objects.
         let mut mesh = chart.configure_mesh();
-        mesh.disable_x_mesh().disable_y_mesh();
 
         // Set the correct y-axis labels depending on the plot type.
         match barplot_type {
@@ -368,7 +367,7 @@ impl DataBase {
 
         mesh.x_desc("Date")
             .x_label_style(("sans-serif", 15).into_font())
-            .y_label_style(("sans-serif", 55).into_font())
+            .y_label_style(("sans-serif", 15).into_font())
             .draw()
             .expect("Failed to render mesh");
 
