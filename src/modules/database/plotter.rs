@@ -1,17 +1,48 @@
 use crate::modules::currency_exchange::CurrencyExchange;
 use crate::modules::database::DataBase;
 use crate::modules::financial::Currency;
-use chrono::NaiveDate;
+use chrono::{Months, NaiveDate};
 use plotters::prelude::*;
 use polars::prelude::*;
 
 use std::fs::{create_dir, File};
 use std::path::Path;
 
+enum Extrema {
+    MIN,
+    MAX,
+}
+
+pub(crate) enum BarplotType {
+    RELATIVE,
+    ABSOLUTE,
+}
+
+/// Returns the earliest / latest date in the dataframe's "date" column.
+/// Panics if no such column.
+fn extreme_date(data_frame: &DataFrame, extrema: Extrema) -> NaiveDate {
+    let i: usize = match extrema {
+        Extrema::MIN => 0,
+        Extrema::MAX => data_frame.height() - 1,
+    };
+    data_frame
+        .column("date")
+        .unwrap()
+        .date()
+        .unwrap()
+        .as_date_iter()
+        .collect::<Vec<Option<NaiveDate>>>()[i]
+        .unwrap()
+}
+
 impl DataBase {
+    // Writes a funds evolution plot (and optionally a csv too), with x-axis
+    // date, and y-axis total funds.
     pub(crate) fn funds_evolution(&self, currency_to: &Currency) -> () {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
 
+        // Fetch the ammounts in the different accounts in the date
+        // of their creation.
         let initial_balances: DataFrame = self
             .account_table
             .data_frame
@@ -25,6 +56,7 @@ impl DataBase {
             .collect()
             .expect("Failed to select account table");
 
+        // Fetch the table with fund movements.
         let mut funds_table: DataFrame = self
             .funds_table
             .data_frame
@@ -38,7 +70,7 @@ impl DataBase {
             .vstack(&initial_balances)
             .expect("Could not append new data");
 
-        // Next step is converting values into the same currency
+        // Next step is converting values into the same currency.
         funds_table = currency_exchange.exchange_currencies(currency_to, funds_table);
 
         // Final data manipulation step involves grouping fund changes per natural
@@ -70,8 +102,6 @@ impl DataBase {
             ])
             .collect()
             .expect("Failed to cumsum");
-
-        println!("{}", &result);
 
         if currency_to == &Currency::EUR {
             // I like having the data in csv
@@ -145,23 +175,22 @@ impl DataBase {
         println!("Plot saved to 'line_plot.png'");
     }
 
-    pub(crate) fn monthly_expenses(&self, currency_to: &Currency) -> () {
+    // Creates a stacked barplot of monthly expenses. One column per month, split into
+    // expense categories.
+    pub(crate) fn monthly_expenses(&self, currency_to: &Currency, barplot_type: BarplotType) -> () {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
 
-        let mut data_frame: DataFrame = self
-            .expenses_table
-            .data_frame
-            .clone()
-            .select(["value", "currency", "date"])
-            .expect("Failed to select funds table");
+        let mut data_frame: DataFrame = self.expenses_table.data_frame.clone();
 
+        // First: convert the ammounts to the desired output currency,
+        // and group by month.
         data_frame = currency_exchange
             .exchange_currencies(currency_to, data_frame)
             .lazy()
             .sort(["date"], Default::default())
             .group_by_dynamic(
                 col("date"),
-                [],
+                [col("category")],
                 DynamicGroupOptions {
                     every: Duration::parse("1mo"),
                     period: Duration::parse("1mo"),
@@ -173,60 +202,169 @@ impl DataBase {
             .collect()
             .expect("Failed to aggregate by month");
 
-        print!("{}", &data_frame);
+        // Then: if the column plot is relative (columns add to 100),
+        // normalize all months to add to 100.
+        data_frame = match barplot_type {
+            BarplotType::ABSOLUTE => data_frame,
+            BarplotType::RELATIVE => {
+                let totals_data_frame = data_frame
+                    .clone()
+                    .lazy()
+                    .group_by(["date"])
+                    .agg([sum("value")])
+                    .with_column(col("value").alias("total"))
+                    .select([col("date"), col("total")]);
 
-        let dates: Vec<String> = data_frame
+                data_frame
+                    .clone()
+                    .lazy()
+                    .left_join(totals_data_frame, col("date"), col("date"))
+                    .with_column((lit(100.0) * col("value") / col("total")).alias("value"))
+                    .collect()
+                    .unwrap()
+            }
+        };
+
+        // Get vector of unique months.
+        let unique_months: Vec<NaiveDate> = data_frame
             .column("date")
+            .unwrap()
+            .unique_stable()
             .unwrap()
             .date()
             .unwrap()
             .as_date_iter()
-            .map(|date| date.unwrap().to_string())
-            .collect();
+            .map(|date| date.unwrap())
+            .collect::<Vec<NaiveDate>>();
 
-        let values: Vec<f64> = data_frame
+        // Now get vector of unique categories, sorted from categories
+        // with the largest to smallest spending.
+        let binding = data_frame
+            .sort(
+                ["value"],
+                SortMultipleOptions::new().with_order_descending(true),
+            )
+            .unwrap()
+            .column("category")
+            .unwrap()
+            .unique_stable()
+            .unwrap();
+
+        let unique_categories: Vec<&str> = binding
+            .str()
+            .unwrap()
+            .iter()
+            .map(|category| category.unwrap())
+            .collect::<Vec<&str>>();
+
+        // Initialize the plot.
+        let root =
+            BitMapBackend::new("figures/stacked_barplot.png", (800, 640)).into_drawing_area();
+        root.fill(&WHITE).expect("Failed to set chart background");
+
+        // Calculate the maximum total expenses, among all months, to have the
+        // upper limit in the plot.
+        let max_value: f64 = data_frame
+            .clone()
+            .lazy()
+            .group_by(["date"])
+            .agg([sum("value")])
+            .max()
+            .collect()
+            .unwrap()
             .column("value")
             .unwrap()
             .f64()
             .unwrap()
-            .into_iter()
-            .map(|v| v.unwrap())
-            .collect();
+            .get(0)
+            .unwrap();
 
-        // Create a drawing area
-        let root =
-            BitMapBackend::new("figures/monthly_expenses.png", (800, 600)).into_drawing_area();
-        root.fill(&WHITE).unwrap();
-
-        // Set up the chart with floating-point y-axis
+        // Initialize axis, etc.
         let mut chart = ChartBuilder::on(&root)
-            .caption("Monthly Values", ("sans-serif", 40))
-            .margin(10)
-            .x_label_area_size(30)
-            .y_label_area_size(40)
-            .build_cartesian_2d(
-                0..(dates.len() - 1),
-                0.0..values.iter().cloned().fold(0.0 / 0.0, f64::max),
+            .caption(
+                "Expenses by Month and Category",
+                ("sans-serif", 20).into_font(),
             )
-            .unwrap();
+            .set_label_area_size(LabelAreaPosition::Left, 60)
+            .set_label_area_size(LabelAreaPosition::Bottom, 60)
+            .build_cartesian_2d(
+                extreme_date(&data_frame, Extrema::MIN)
+                    ..extreme_date(&data_frame, Extrema::MAX)
+                        .checked_add_months(Months::new(2))
+                        .unwrap(),
+                -0.001..(max_value * 1.05),
+            )
+            .expect("Failed to set chart axis");
 
-        chart
-            .configure_mesh()
-            .x_labels(dates.len())
-            .x_label_formatter(&|x| dates[*x].clone())
-            .y_desc("Value")
-            .x_desc("Month")
+        // Initialize the plotted objects.
+        let mut mesh = chart.configure_mesh();
+        mesh.disable_x_mesh().disable_y_mesh();
+
+        // Set the correct y-axis labels depending on the plot type.
+        match barplot_type {
+            BarplotType::ABSOLUTE => {
+                mesh.y_label_formatter(&|x| format!("{:.0}", x))
+                    .y_desc(currency_to.to_string().as_str());
+            }
+            BarplotType::RELATIVE => {
+                mesh.y_label_formatter(&|x| format!("{:.0}%", x))
+                    .y_desc("Percentage of Total Expenses");
+            }
+        };
+
+        mesh.x_desc("Date")
+            .x_label_style(("sans-serif", 15).into_font())
+            .y_label_style(("sans-serif", 55).into_font())
             .draw()
-            .unwrap();
+            .expect("Failed to render mesh");
 
-        // Draw bars with floating-point heights
+        // Plot the columns
+        for (index_m, month) in unique_months.iter().enumerate() {
+            // The start of each category block is the end of the preceding.
+            let mut y0: f64 = 0.0;
+            for (index_c, category) in unique_categories.iter().enumerate() {
+                let colour = Palette9999::pick(index_c);
+                let x0 = *month;
+                let x1 = month.checked_add_months(Months::new(1)).unwrap();
+                let height = data_frame
+                    .clone()
+                    .lazy()
+                    .filter(
+                        col("category")
+                            .eq(lit(*category))
+                            .and(col("date").eq(lit(*month))),
+                    )
+                    .collect()
+                    .unwrap()
+                    .column("value")
+                    .unwrap()
+                    .f64()
+                    .unwrap()
+                    .max() // easiest way to get the only value, if exists
+                    .unwrap_or(0.0);
+                let y1 = y0 + height;
+
+                let mut bar = Rectangle::new([(x0, y0), (x1, y1)], colour.filled());
+                bar.set_margin(0, 0, 5, 5);
+
+                let ctx = chart.draw_series(vec![bar]).expect("Failed");
+                if index_m == 0 {
+                    let style = colour.stroke_width(10);
+                    ctx.label(*category).legend(move |(x, y)| {
+                        PathElement::new(vec![(x, y), (x + 20, y)], style.clone())
+                    });
+                }
+
+                y0 = y1;
+            }
+        }
+
+        // Finally, create the legend and export.
         chart
-            .draw_series(values.iter().enumerate().map(|(idx, &val)| {
-                Rectangle::new(
-                    [(idx, 0.0), (idx + 1, val)], // Use f64 for heights
-                    BLUE.filled(),
-                )
-            }))
+            .configure_series_labels()
+            .border_style(&BLACK)
+            .background_style(&WHITE.mix(0.8))
+            .draw()
             .unwrap();
     }
 }

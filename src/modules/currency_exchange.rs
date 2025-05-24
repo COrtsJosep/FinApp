@@ -272,7 +272,7 @@ impl CurrencyExchange {
     pub(crate) fn exchange_currencies(
         &self,
         currency_to: &Currency,
-        mut data_frame: DataFrame,
+        data_frame: DataFrame,
     ) -> DataFrame {
         let mut exchange_rates: Vec<f64> = vec![];
         let date_iter = data_frame
@@ -298,14 +298,10 @@ impl CurrencyExchange {
         }
 
         data_frame
-            .with_column(Series::new("exchange_rate".into(), exchange_rates))
-            .expect("Failed to add exchange_rate column")
-            .clone()
             .lazy()
-            .select([
-                col("date"),
-                (col("exchange_rate") * col("value")).alias("value"),
-            ])
+            .with_column(lit(Series::new("exchange_rate".into(), exchange_rates)))
+            .with_column((col("exchange_rate") * col("value")).alias("value"))
+            .drop(["exchange_rate", "currency"])
             .collect()
             .unwrap()
     }
