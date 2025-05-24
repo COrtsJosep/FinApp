@@ -139,6 +139,8 @@ impl DataBase {
             .into_no_null_iter()
             .collect();
 
+        let bankrupcy_values: Vec<f64> = vec![0.0; values.len()];
+
         // Then create the plot
         let root =
             BitMapBackend::new("figures/funds_evolution.png", (800, 600)).into_drawing_area();
@@ -168,7 +170,28 @@ impl DataBase {
                 dates.iter().zip(values.iter()).map(|(d, v)| (*d, *v)),
                 &BLACK,
             ))
-            .expect("Failed to draw line");
+            .expect("Failed to draw line")
+            .label("Total Funds")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLACK));
+
+        chart
+            .draw_series(LineSeries::new(
+                dates
+                    .iter()
+                    .zip(bankrupcy_values.iter())
+                    .map(|(d, v)| (*d, *v)),
+                &RED,
+            ))
+            .expect("Failed to draw line")
+            .label("Bankrupcy")
+            .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+
+        chart
+            .configure_series_labels()
+            .border_style(&BLACK)
+            .background_style(&WHITE.mix(0.8))
+            .draw()
+            .unwrap();
 
         // Finally save the plot
         root.present().expect("Failed to present plot");
