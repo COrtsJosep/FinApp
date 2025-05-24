@@ -4,18 +4,45 @@ use crate::modules::financial::Currency;
 use chrono::{Months, NaiveDate};
 use plotters::prelude::*;
 use polars::prelude::*;
-
+use std::fmt::Display;
 use std::fs::{create_dir, File};
 use std::path::Path;
+use strum_macros::EnumIter;
 
 enum Extrema {
     MIN,
     MAX,
 }
 
+#[derive(EnumIter, Eq, PartialEq)]
 pub(crate) enum BarplotType {
     RELATIVE,
     ABSOLUTE,
+}
+
+impl Default for BarplotType {
+    fn default() -> Self {
+        BarplotType::ABSOLUTE
+    }
+}
+
+impl Display for BarplotType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            BarplotType::ABSOLUTE => "Absolute".to_string(),
+            BarplotType::RELATIVE => "Relative".to_string(),
+        };
+        write!(f, "{}", str)
+    }
+}
+
+impl BarplotType {
+    pub(crate) fn clone(&self) -> BarplotType {
+        match self {
+            BarplotType::ABSOLUTE => BarplotType::ABSOLUTE,
+            BarplotType::RELATIVE => BarplotType::RELATIVE,
+        }
+    }
 }
 
 /// Returns the earliest / latest date in the dataframe's "date" column.
@@ -200,7 +227,11 @@ impl DataBase {
 
     // Creates a stacked barplot of monthly expenses. One column per month, split into
     // expense categories.
-    pub(crate) fn monthly_expenses(&self, currency_to: &Currency, barplot_type: BarplotType) -> () {
+    pub(crate) fn monthly_expenses(
+        &self,
+        currency_to: &Currency,
+        barplot_type: &BarplotType,
+    ) -> () {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
 
         let mut data_frame: DataFrame = self.expenses_table.data_frame.clone();
@@ -282,7 +313,7 @@ impl DataBase {
 
         // Initialize the plot.
         let root =
-            BitMapBackend::new("figures/stacked_barplot.png", (800, 640)).into_drawing_area();
+            BitMapBackend::new("figures/monthly_expenses.png.png", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to set chart background");
 
         // Calculate the maximum total expenses, among all months, to have the

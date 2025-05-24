@@ -3,6 +3,7 @@ pub mod inputting;
 pub mod plotting;
 pub mod summarizing;
 
+use crate::modules::database::plotter::BarplotType;
 use crate::modules::database::*;
 use crate::modules::financial::*;
 use chrono::{Local, NaiveDate};
@@ -24,6 +25,8 @@ pub struct AppState {
     show_fund_stand_window: bool,
     show_browse_last_transactions_window: bool,
     show_browse_last_fund_movements_window: bool,
+    show_fund_evolution_plot_window: bool,
+    show_expense_category_plot_window: bool,
 
     database: DataBase,
 
@@ -79,6 +82,11 @@ pub struct AppState {
     #[derivative(Default(value = "-1"))]
     browse_account_id: i64,
     browse_account_string: String,
+
+    fund_evolution_plot_currency: Currency,
+
+    expense_category_plot_currency: Currency,
+    expense_category_plot_type: BarplotType,
 }
 
 impl eframe::App for AppState {
@@ -98,9 +106,14 @@ impl eframe::App for AppState {
                 }
             });
 
-            if ui.button("Plotting").clicked() {
-                todo!();
-            };
+            ui.menu_button("Plotting", |ui| {
+                if ui.button("Funds Evolution").clicked() {
+                    self.show_fund_evolution_plot_window = true;
+                }
+                if ui.button("Expenses by Category and Month").clicked() {
+                    self.show_expense_category_plot_window = true;
+                }
+            });
 
             ui.menu_button("Browsing", |ui| {
                 if ui.button("Last transactions").clicked() {
@@ -142,6 +155,14 @@ impl eframe::App for AppState {
 
         if self.show_browse_last_fund_movements_window {
             self.handle_show_browse_last_fund_movements_window(ctx);
+        }
+
+        if self.show_fund_evolution_plot_window {
+            self.handle_show_fund_evolution_plot(ctx);
+        }
+
+        if self.show_expense_category_plot_window {
+            self.handle_show_expense_category_plot(ctx);
         }
     }
 }
