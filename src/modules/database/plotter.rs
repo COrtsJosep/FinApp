@@ -53,6 +53,8 @@ fn extreme_date(data_frame: &DataFrame, extrema: Extrema) -> NaiveDate {
         Extrema::MAX => data_frame.height() - 1,
     };
     data_frame
+        .sort(["date"], Default::default())
+        .unwrap()
         .column("date")
         .unwrap()
         .date()
@@ -344,7 +346,7 @@ impl DataBase {
             .build_cartesian_2d(
                 extreme_date(&data_frame, Extrema::MIN)
                     ..extreme_date(&data_frame, Extrema::MAX)
-                        .checked_add_months(Months::new(2))
+                        .checked_add_months(Months::new(1))
                         .unwrap(),
                 -0.001..(max_value * 1.05),
             )
