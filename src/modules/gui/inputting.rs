@@ -328,7 +328,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("input_party_window"),
             egui::ViewportBuilder::default()
                 .with_title("Party Creation")
-                .with_inner_size([WINDOW_WIDTH / 2.0, WINDOW_HEIGHT]),
+                .with_inner_size([WINDOW_WIDTH / 1.5, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,

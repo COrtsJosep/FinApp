@@ -10,6 +10,7 @@ use chrono::{Local, NaiveDate};
 use derivative::*;
 use eframe::egui;
 use egui::PopupCloseBehavior;
+use egui_extras::{Size, StripBuilder};
 
 const WINDOW_HEIGHT: f32 = 400.0;
 const WINDOW_WIDTH: f32 = 600.0;
@@ -94,37 +95,51 @@ impl eframe::App for AppState {
         egui_extras::install_image_loaders(ctx);
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("Welcome to you personal finances app!");
-            if ui.button("Add transactions").clicked() {
-                self.show_input_party_window = true;
-            };
+            StripBuilder::new(ui)
+                .size(Size::exact(40.0))
+                .size(Size::remainder().at_least(100.0))
+                .size(Size::exact(40.0))
+                .vertical(|mut strip| {
+                    strip.cell(|ui| {
+                        ui.vertical_centered_justified(|ui| {
+                            ui.label("Welcome to you personal finances app!");
+                            if ui.button("Add transactions").clicked() {
+                                self.show_input_party_window = true;
+                            };
+                            ui.end_row();
 
-            ui.menu_button("Summaries", |ui| {
-                if ui.button("Expenses by Category").clicked() {
-                    self.show_expense_summary_window = true;
-                }
-                if ui.button("Funds by Account").clicked() {
-                    self.show_fund_stand_window = true;
-                }
-            });
+                            ui.menu_button("Summaries", |ui| {
+                                if ui.button("Expenses by Category").clicked() {
+                                    self.show_expense_summary_window = true;
+                                }
+                                if ui.button("Funds by Account").clicked() {
+                                    self.show_fund_stand_window = true;
+                                }
+                            });
+                            ui.end_row();
 
-            ui.menu_button("Plotting", |ui| {
-                if ui.button("Funds Evolution").clicked() {
-                    self.show_fund_evolution_plot_window = true;
-                }
-                if ui.button("Expenses by Category and Month").clicked() {
-                    self.show_expense_category_plot_window = true;
-                }
-            });
+                            ui.menu_button("Plotting", |ui| {
+                                if ui.button("Funds Evolution").clicked() {
+                                    self.show_fund_evolution_plot_window = true;
+                                }
+                                if ui.button("Expenses by Category and Month").clicked() {
+                                    self.show_expense_category_plot_window = true;
+                                }
+                            });
+                            ui.end_row();
 
-            ui.menu_button("Browsing", |ui| {
-                if ui.button("Last transactions").clicked() {
-                    self.show_browse_last_transactions_window = true;
-                }
-                if ui.button("Last fund movements").clicked() {
-                    self.show_browse_last_fund_movements_window = true;
-                }
-            })
+                            ui.menu_button("Browsing", |ui| {
+                                if ui.button("Last transactions").clicked() {
+                                    self.show_browse_last_transactions_window = true;
+                                }
+                                if ui.button("Last fund movements").clicked() {
+                                    self.show_browse_last_fund_movements_window = true;
+                                }
+                            });
+                            ui.end_row();
+                        });
+                    });
+                });
         });
 
         if self.show_input_entity_window {

@@ -25,7 +25,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("browse_last_transactions_window"),
             egui::ViewportBuilder::default()
             .with_title("Last transactions window")
-            .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
+            .with_inner_size([WINDOW_WIDTH * 1.2, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
@@ -141,7 +141,7 @@ impl AppState {
             egui::ViewportId::from_hash_of("browse_last_fund_movements_window"),
             egui::ViewportBuilder::default()
             .with_title("Last fund movements window")
-            .with_inner_size([WINDOW_WIDTH, WINDOW_HEIGHT]),
+            .with_inner_size([WINDOW_WIDTH * 1.2, WINDOW_HEIGHT]),
             |ctx, class| {
                 assert!(
                     class == egui::ViewportClass::Immediate,
