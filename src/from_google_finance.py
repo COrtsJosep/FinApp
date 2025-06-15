@@ -9,7 +9,7 @@ expense_colnames = ['expense_id', 'value', 'currency', 'date', 'category', 'subc
 income_colnames = [colname.replace('expense', 'income') for colname in expense_colnames]
 
 ### parsing of the expense data
-expense_df = pl.read_csv(data_path / 'Monthly.budget.-.Transactions.csv', 
+expense_df = pl.read_csv(data_path / 'Monthly_Budget_Linda - Transactions.csv', 
     skip_rows = 3, 
     try_parse_dates = True,
     columns = [1, 2, 3, 4])
@@ -38,7 +38,7 @@ expense_id_series = pl.Series('expense_id', range(expense_df.shape[0]))
 )
 
 ### parsing of the income data
-income_df = pl.read_csv(data_path / 'Monthly.budget.-.Transactions.csv', 
+income_df = pl.read_csv(data_path / 'Monthly_Budget_Linda - Transactions.csv', 
     skip_rows = 3, 
     try_parse_dates = True,
     columns = [6, 7, 8, 9],
@@ -69,5 +69,5 @@ income_id_series = pl.Series('income_id', range(income_df.shape[0]))
 
 ### creation of party table
 date = datetime.datetime.now().strftime('%Y-%m-%d')
-with open(data_path / 'party_table_test.csv', 'w') as file:
+with open(data_path / 'party_table.csv', 'w') as file:
     file.write(f'party_id,creation_date\n0,{date}')
