@@ -14,6 +14,7 @@ use egui_extras::{Size, StripBuilder};
 
 const WINDOW_HEIGHT: f32 = 400.0;
 const WINDOW_WIDTH: f32 = 600.0;
+const BUTTON_SPACING: f32 = 10.0;
 
 #[derive(Derivative)]
 #[derivative(Default)]
@@ -102,11 +103,11 @@ impl eframe::App for AppState {
                 .vertical(|mut strip| {
                     strip.cell(|ui| {
                         ui.vertical_centered_justified(|ui| {
-                            ui.label("Welcome to you personal finances app!");
                             if ui.button("Add transactions").clicked() {
                                 self.show_input_party_window = true;
                             };
                             ui.end_row();
+                            ui.add_space(BUTTON_SPACING);
 
                             ui.menu_button("Summaries", |ui| {
                                 if ui.button("Expenses by Category").clicked() {
@@ -117,6 +118,7 @@ impl eframe::App for AppState {
                                 }
                             });
                             ui.end_row();
+                            ui.add_space(BUTTON_SPACING);
 
                             ui.menu_button("Plotting", |ui| {
                                 if ui.button("Funds Evolution").clicked() {
@@ -127,6 +129,7 @@ impl eframe::App for AppState {
                                 }
                             });
                             ui.end_row();
+                            ui.add_space(BUTTON_SPACING);
 
                             ui.menu_button("Browsing", |ui| {
                                 if ui.button("Last transactions").clicked() {

@@ -13,13 +13,13 @@ polars = { version = "0.46", features = ["lazy",
 	"is_between",
 	"abs",
 ] }
-eframe = { version = "0.30", features = ["default",
+eframe = { version = "0.31", features = ["default",
     "default_fonts",
     "glow",
 ] }
-egui = "0.30"
-egui_extras = { version = "0.30", features = ["datepicker", "all_loaders"] }
-egui_autocomplete = "9.0.0"
+egui = "0.31"
+egui_extras = { version = "0.31", features = ["datepicker", "all_loaders"] }
+egui_autocomplete = "10.2"
 env_logger = { version = "0.11.6", default-features = false, features = ["auto-color", "humantime"] }
 strum = "0.27"
 strum_macros = "0.27"
