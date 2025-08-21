@@ -105,6 +105,7 @@ impl eframe::App for AppState {
                         ui.vertical_centered_justified(|ui| {
                             if ui.button("Add transactions").clicked() {
                                 self.show_input_party_window = true;
+                                self.show_input_transaction_window = true;
                             };
                             ui.end_row();
                             ui.add_space(BUTTON_SPACING);
