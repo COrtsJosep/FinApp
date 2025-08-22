@@ -166,6 +166,7 @@ impl DataBase {
     ) -> String {
         let currency_exchange: CurrencyExchange = CurrencyExchange::init();
         let total_income: f64 = self.total_income(date_from, date_to, currency_to);
+        let num_days: i64 = date_to.signed_duration_since(date_from).num_days();
 
         let expenses_table: DataFrame = self
             .expenses_table
@@ -201,6 +202,9 @@ impl DataBase {
             .agg([col(currency_to.to_string()).sum()])
             .with_columns([
                 col(currency_to.to_string()).round(2),
+                (col(currency_to.to_string()) / lit(num_days))
+                    .round(2)
+                    .alias(format!("{}_/_day", currency_to.to_string()).as_str()),
                 (col(currency_to.to_string()) * lit(100) / col(currency_to.to_string()).sum())
                     .round(2)
                     .alias("%_total_expenses"),
@@ -232,6 +236,7 @@ impl DataBase {
         "Category" => ["Total"],
         "Subcategory" => ["Total"],
         currency_to.to_string().as_str() => [(100.0 * total_expenses).round() / 100.0],
+        format!("{} / Day", currency_to.to_string()).as_str() => [(100.0 * total_expenses / num_days as f64).round() / 100.0],
         "% Total Expenses" => [100.0],
         "% Total Income" => [(100.0 * 100.0 * total_expenses / total_income).round() / 100.0]
         )
