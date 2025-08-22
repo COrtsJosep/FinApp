@@ -1,3 +1,4 @@
+mod palettes;
 pub mod plotter;
 pub mod summaries;
 pub mod views;

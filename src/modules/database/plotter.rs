@@ -1,4 +1,5 @@
 use crate::modules::currency_exchange::CurrencyExchange;
+use crate::modules::database::palettes::fetch_palette;
 use crate::modules::database::DataBase;
 use crate::modules::financial::Currency;
 use chrono::{Months, NaiveDate};
@@ -62,6 +63,48 @@ fn extreme_date(data_frame: &DataFrame, extrema: Extrema) -> NaiveDate {
         .as_date_iter()
         .collect::<Vec<Option<NaiveDate>>>()[i]
         .unwrap()
+}
+
+/// Returns the smallest / largest value in the dataframe's "value" column.
+/// Panics if no such column.
+fn extreme_value(data_frame: &DataFrame, extrema: Extrema) -> f64 {
+    let lazy_frame = match extrema {
+        Extrema::MIN => data_frame
+            .clone()
+            .lazy()
+            .filter(col("value").lt(0.0))
+            .group_by(["date"])
+            .agg([sum("value")])
+            .min(),
+        Extrema::MAX => data_frame
+            .clone()
+            .lazy()
+            .filter(col("value").gt_eq(0.0))
+            .group_by(["date"])
+            .agg([sum("value")])
+            .max(),
+    };
+
+    let extreme_value = lazy_frame
+        .collect()
+        .unwrap()
+        .column("value")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .get(0)
+        .unwrap_or(0.0);
+
+    match extrema {
+        Extrema::MIN => {
+            if extreme_value > 0.0 {
+                0.0
+            } else {
+                extreme_value
+            }
+        }
+        Extrema::MAX => extreme_value,
+    }
 }
 
 impl DataBase {
@@ -260,12 +303,13 @@ impl DataBase {
 
         // Then: if the column plot is relative (columns add to 100),
         // normalize all months to add to 100.
-        data_frame = match barplot_type {
+        let data_frame = match barplot_type {
             BarplotType::ABSOLUTE => data_frame,
             BarplotType::RELATIVE => {
                 let totals_data_frame = data_frame
                     .clone()
                     .lazy()
+                    .filter(col("value").gt_eq(0.0))
                     .group_by(["date"])
                     .agg([sum("value")])
                     .with_column(col("value").alias("total"))
@@ -312,28 +356,12 @@ impl DataBase {
             .iter()
             .map(|category| category.unwrap())
             .collect::<Vec<&str>>();
+        let num_categories: usize = unique_categories.len();
 
         // Initialize the plot.
         let root =
             BitMapBackend::new("figures/monthly_expenses.png", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to set chart background");
-
-        // Calculate the maximum total expenses, among all months, to have the
-        // upper limit in the plot.
-        let max_value: f64 = data_frame
-            .clone()
-            .lazy()
-            .group_by(["date"])
-            .agg([sum("value")])
-            .max()
-            .collect()
-            .unwrap()
-            .column("value")
-            .unwrap()
-            .f64()
-            .unwrap()
-            .get(0)
-            .unwrap();
 
         // Initialize axis, etc.
         let mut chart = ChartBuilder::on(&root)
@@ -346,14 +374,16 @@ impl DataBase {
             .build_cartesian_2d(
                 extreme_date(&data_frame, Extrema::MIN)
                     ..extreme_date(&data_frame, Extrema::MAX)
-                        .checked_add_months(Months::new(1))
+                        .checked_add_months(Months::new(2))
                         .unwrap(),
-                -0.001..(max_value * 1.05),
+                ((extreme_value(&data_frame, Extrema::MIN) - 0.001) * 1.05)
+                    ..(extreme_value(&data_frame, Extrema::MAX) * 1.05),
             )
             .expect("Failed to set chart axis");
 
         // Initialize the plotted objects.
         let mut mesh = chart.configure_mesh();
+        mesh.disable_x_mesh().light_line_style(WHITE);
 
         // Set the correct y-axis labels depending on the plot type.
         match barplot_type {
@@ -373,12 +403,15 @@ impl DataBase {
             .draw()
             .expect("Failed to render mesh");
 
+        // fetch the colour palette
+        let palette: Vec<RGBAColor> = fetch_palette(num_categories);
         // Plot the columns
         for (index_m, month) in unique_months.iter().enumerate() {
-            // The start of each category block is the end of the preceding.
-            let mut y0: f64 = 0.0;
-            for (index_c, category) in unique_categories.iter().enumerate() {
-                let colour = Palette9999::pick(index_c);
+            let mut y0_pos: f64 = 0.0;
+            let mut y0_neg: f64 = 0.0;
+            for (mut index_c, category) in unique_categories.iter().enumerate() {
+                index_c = index_c % 14; // wrap around the maximum number of colours
+                let colour = palette[index_c];
                 let x0 = *month;
                 let x1 = month.checked_add_months(Months::new(1)).unwrap();
                 let height = data_frame
@@ -397,6 +430,8 @@ impl DataBase {
                     .unwrap()
                     .max() // easiest way to get the only value, if exists
                     .unwrap_or(0.0);
+
+                let y0 = if height > 0.0 { y0_pos } else { y0_neg };
                 let y1 = y0 + height;
 
                 let mut bar = Rectangle::new([(x0, y0), (x1, y1)], colour.filled());
@@ -410,7 +445,11 @@ impl DataBase {
                     });
                 }
 
-                y0 = y1;
+                if height > 0.0 {
+                    y0_pos = y1;
+                } else {
+                    y0_neg = y1;
+                }
             }
         }
 
