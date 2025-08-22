@@ -63,7 +63,7 @@ impl AppState {
                                 ui.separator();
                             });
                             strip.cell(|ui| {
-                                ui.image("file://figures/funds_evolution.png");
+                                ui.image("file://figures/funds_evolution.svg");
                                 ui.separator();
                             });
                         });
@@ -152,7 +152,7 @@ impl AppState {
                                 ui.separator();
                             });
                             strip.cell(|ui| {
-                                ui.image("file://figures/monthly_expenses.png");
+                                ui.image("file://figures/monthly_expenses.svg");
                                 ui.separator();
                             });
                         });
