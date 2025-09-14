@@ -4,7 +4,7 @@ use FinApp::modules::gui::*;
 fn main() -> eframe::Result {
     env_logger::init();
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default().with_inner_size([320.0, 240.0]),
+        viewport: egui::ViewportBuilder::default().with_inner_size([360.0, 100.0]),
         ..Default::default()
     };
     eframe::run_native(
