@@ -214,8 +214,7 @@ impl DataBase {
         let bankrupcy_values: Vec<f64> = vec![0.0; values.len()];
 
         // Then create the plot
-        let root =
-            BitMapBackend::new("figures/funds_evolution.png", (800, 640)).into_drawing_area();
+        let root = SVGBackend::new("figures/funds_evolution.svg", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to fill plotting root");
 
         let mut chart = ChartBuilder::on(&root)
@@ -359,8 +358,7 @@ impl DataBase {
         let num_categories: usize = unique_categories.len();
 
         // Initialize the plot.
-        let root =
-            BitMapBackend::new("figures/monthly_expenses.png", (800, 640)).into_drawing_area();
+        let root = SVGBackend::new("figures/monthly_expenses.svg", (800, 640)).into_drawing_area();
         root.fill(&WHITE).expect("Failed to set chart background");
 
         // Initialize axis, etc.

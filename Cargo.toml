@@ -13,17 +13,16 @@ polars = { version = "0.46", features = ["lazy",
 	"is_between",
 	"abs",
 ] }
-eframe = { version = "0.31", features = ["default",
+eframe = { version = "0.32.3", features = ["default",
     "default_fonts",
     "glow",
 ] }
-egui = "0.31"
-egui_extras = { version = "0.31", features = ["datepicker", "all_loaders"] }
-egui_autocomplete = "10.2"
+egui = "0.32.3"
+egui_extras = { version = "0.32.3", features = ["datepicker", "svg", "all_loaders", "svg_text"] }
+egui_autocomplete = "11.0"
 env_logger = { version = "0.11.6", default-features = false, features = ["auto-color", "humantime"] }
 strum = "0.27"
 strum_macros = "0.27"
 derivative = "2.2.0"
 reqwest = { version = "0.12", features = ["blocking"] }
 plotters = "0.3.7"
-image = { version = "0.25", features = ["jpeg", "png"] }
