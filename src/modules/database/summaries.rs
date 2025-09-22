@@ -2,8 +2,49 @@ use crate::modules::currency_exchange::CurrencyExchange;
 use crate::modules::database::{capitalize_every_word, data_frame_to_csv_string, DataBase};
 use crate::modules::financial::Currency;
 use chrono::{Local, NaiveDate};
+use polars::prelude::pivot::pivot_stable;
 use polars::prelude::*;
+use std::fmt::Display;
 use std::str::FromStr;
+use strum_macros::{EnumIter, EnumString};
+
+#[derive(Debug, Hash, PartialEq, Eq, EnumIter, Clone, EnumString)]
+pub(crate) enum TimeUnit {
+    Day,
+    Week,
+    Month,
+    Year,
+}
+
+impl TimeUnit {
+    pub(crate) fn duration(&self) -> &str {
+        match self {
+            TimeUnit::Day => "1d",
+            TimeUnit::Week => "1w",
+            TimeUnit::Month => "1mo",
+            TimeUnit::Year => "1y",
+        }
+    }
+}
+
+// Conversion to string
+impl Display for TimeUnit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            TimeUnit::Day => "Day".to_string(),
+            TimeUnit::Week => "Week".to_string(),
+            TimeUnit::Month => "Month".to_string(),
+            TimeUnit::Year => "Year".to_string(),
+        };
+        write!(f, "{}", str)
+    }
+}
+
+impl Default for TimeUnit {
+    fn default() -> Self {
+        TimeUnit::Month
+    }
+}
 
 impl DataBase {
     /// Calculates the sum of all the incomes earned between date_from to date_to, both included,
@@ -245,5 +286,76 @@ impl DataBase {
         summary = summary.vstack(&last_row).unwrap();
 
         data_frame_to_csv_string(&mut summary)
+    }
+
+    pub(crate) fn evolution_table(&self, currency_to: &Currency, time_unit: &TimeUnit) -> String {
+        let currency_exchange: CurrencyExchange = CurrencyExchange::init();
+        let duration: &str = time_unit.duration();
+
+        let expenses_table: DataFrame = self.expenses_table.data_frame.clone();
+
+        let mut exchange_rates = Vec::new();
+        let currency_iterator = expenses_table
+            .column("currency")
+            .unwrap()
+            .str()
+            .unwrap()
+            .into_iter();
+        for currency in currency_iterator {
+            let currency_from =
+                Currency::from_str(currency.unwrap()).expect("Failed to find currency");
+            let exchange_rate: f64 = currency_exchange.exchange_currency(
+                &currency_from,
+                currency_to,
+                Local::now().date_naive(),
+            );
+            exchange_rates.push(exchange_rate);
+        }
+
+        let exchange_rates: Series = Series::new("exchange_rate".into(), exchange_rates);
+
+        let summary: DataFrame = expenses_table
+            .lazy()
+            .with_column(exchange_rates.lit())
+            .with_column((col("exchange_rate") * col("value")).alias(currency_to.to_string()))
+            .sort(["date"], Default::default())
+            .group_by_dynamic(
+                col("date"),
+                [col("category")],
+                DynamicGroupOptions {
+                    every: Duration::parse(duration),
+                    period: Duration::parse(duration),
+                    offset: Duration::parse("0"),
+                    ..Default::default()
+                },
+            )
+            .agg([col(currency_to.to_string()).sum().round(2)])
+            .collect()
+            .expect("Failed to aggregate by time period");
+
+        let mut pivoted_summary: DataFrame = pivot_stable(
+            &summary,
+            ["category"],
+            Some(["date"]),
+            Some([currency_to.to_string()]),
+            true,
+            None,
+            None,
+        )
+        .expect("Failed to pivot evolution table")
+        .lazy()
+        .sort(["date"], Default::default())
+        .collect()
+        .expect("Failed to finish pivoted evolution table")
+        .upsample::<[String; 0]>([], "date", Duration::parse(duration))
+        .expect("Failed to expand date on pivoted evolution table")
+        .fill_null(FillNullStrategy::Zero)
+        .expect("Failed to fill null values in pivoted evolution table");
+
+        pivoted_summary
+            .rename("date", PlSmallStr::from_string(time_unit.to_string()))
+            .expect("Failed to rename column");
+
+        data_frame_to_csv_string(&mut pivoted_summary)
     }
 }

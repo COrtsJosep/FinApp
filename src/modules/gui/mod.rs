@@ -3,6 +3,7 @@ pub mod inputting;
 pub mod plotting;
 pub mod summarizing;
 
+use super::database::summaries::TimeUnit;
 use crate::modules::database::plotter::BarplotType;
 use crate::modules::database::*;
 use crate::modules::financial::*;
@@ -28,6 +29,7 @@ pub struct AppState {
     show_browse_last_fund_movements_window: bool,
     show_fund_evolution_plot_window: bool,
     show_expense_category_plot_window: bool,
+    show_expenses_evolution_window: bool,
 
     database: DataBase,
 
@@ -72,6 +74,10 @@ pub struct AppState {
     fund_stand_csv: String,
     fund_stand_currency: Option<Currency>,
 
+    expenses_evolution_csv: String,
+    expenses_evolution_currency: Currency,
+    expenses_evolution_time_unit: TimeUnit,
+
     last_transactions_csv: String,
     last_transactions_n: usize,
     last_transactions_n_temptative: String,
@@ -112,6 +118,9 @@ impl eframe::App for AppState {
                                 }
                                 if ui.button("Funds by Account").clicked() {
                                     self.show_fund_stand_window = true;
+                                }
+                                if ui.button("Expenses Evolution").clicked() {
+                                    self.show_expenses_evolution_window = true;
                                 }
                             });
                             ui.end_row();
@@ -162,6 +171,10 @@ impl eframe::App for AppState {
 
         if self.show_fund_stand_window {
             self.handle_show_fund_stand_window(ctx)
+        }
+
+        if self.show_expenses_evolution_window {
+            self.handle_show_expenses_evolution_window(ctx)
         }
 
         if self.show_browse_last_transactions_window {
