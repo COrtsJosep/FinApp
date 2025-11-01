@@ -6,6 +6,7 @@ pub mod views;
 use crate::modules::financial::*;
 use crate::modules::tables::*;
 use polars::prelude::*;
+use regex::Regex;
 use std::io::Cursor;
 use std::vec::IntoIter;
 
@@ -17,11 +18,15 @@ fn data_frame_to_csv_string(data_frame: &mut DataFrame) -> String {
         .finish(data_frame)
         .unwrap();
 
-    String::from_utf8(buffer.into_inner())
-        .unwrap()
-        .replace(".0,", ".00,")
-        .trim_end_matches("\n")
-        .to_string()
+    let re = Regex::new(r"(\.\d)([\,\n])").unwrap();
+
+    re.replace_all(
+        String::from_utf8(buffer.into_inner()).unwrap().as_str(),
+        "${1}0${2}",
+    )
+    .to_string()
+    .trim_end_matches("\n")
+    .to_string()
 }
 
 fn capitalize_every_word(sentence: String) -> String {
