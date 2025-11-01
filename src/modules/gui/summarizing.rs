@@ -224,7 +224,8 @@ impl AppState {
 
                     StripBuilder::new(ui)
                         .size(Size::exact(40.0))
-                        .size(Size::remainder().at_least(120.0))
+                        .size(Size::initial(240.0))
+                        .size(Size::remainder().at_least(10.0))
                         .vertical(|mut strip| {
                             strip.cell(|ui| {
                                 egui::Grid::new("expenses_evolution")
@@ -271,7 +272,7 @@ impl AppState {
                                 ui.separator();
                             });
                             strip.cell(|ui| {
-                                                TableBuilder::new(ui)
+                                TableBuilder::new(ui)
                                         .columns(Column::auto().resizable(true), column_count)
                                         .striped(true)
                                         .cell_layout(Layout::right_to_left(Align::Center))
@@ -294,8 +295,8 @@ impl AppState {
                                                 });
                                             }                         
                                         });
-                                ui.separator();
                             });
+                            strip.cell(|ui| {ui.separator();});
                         });
                 });
                 if ctx.input(|i| i.viewport().close_requested()) {
