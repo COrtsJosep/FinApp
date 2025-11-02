@@ -1,0 +1,14 @@
+fund_movement_id,fund_movement_type,value,currency,date,account_id,party_id
+0,Credit,34094.2,EUR,2024-01-26,0,0
+1,Credit,34094.2,CHF,2024-02-25,0,1
+2,Credit,34094.2,EUR,2024-03-26,0,2
+3,Credit,34094.2,EUR,2024-04-25,0,3
+4,Credit,34094.2,CHF,2024-05-25,0,4
+5,Credit,34094.2,EUR,2024-06-24,0,5
+6,Credit,34094.2,CHF,2024-07-24,0,6
+7,Credit,34094.2,EUR,2024-08-23,0,7
+8,Credit,34094.2,CHF,2024-09-22,0,8
+9,Credit,34094.2,CHF,2024-10-22,0,9
+10,Credit,34094.2,CHF,2024-11-21,0,10
+11,Credit,34094.2,EUR,2024-12-21,0,11
+24,Debit,-41.66557026950774,CHF,2024-02-03,0,273

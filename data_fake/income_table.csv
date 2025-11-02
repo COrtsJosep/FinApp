@@ -1,0 +1,13 @@
+income_id,value,currency,date,category,subcategory,description,entity_id,party_id
+0,34094.2,EUR,2024-01-26,Salary,Regular salary,,0,0
+1,34094.2,CHF,2024-02-25,Salary,Regular salary,,0,1
+2,34094.2,EUR,2024-03-26,Salary,Regular salary,,0,2
+3,34094.2,EUR,2024-04-25,Salary,Regular salary,,0,3
+4,34094.2,CHF,2024-05-25,Salary,Regular salary,,0,4
+5,34094.2,EUR,2024-06-24,Salary,Regular salary,,0,5
+6,34094.2,CHF,2024-07-24,Salary,Regular salary,,0,6
+7,34094.2,EUR,2024-08-23,Salary,Regular salary,,0,7
+8,34094.2,CHF,2024-09-22,Salary,Regular salary,,0,8
+9,34094.2,CHF,2024-10-22,Salary,Regular salary,,0,9
+10,34094.2,CHF,2024-11-21,Salary,Regular salary,,0,10
+11,34094.2,EUR,2024-12-21,Salary,Regular salary,,0,11
