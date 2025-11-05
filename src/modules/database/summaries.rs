@@ -152,6 +152,8 @@ impl DataBase {
                 .with_column(
                     (col("exchange_rate") * col("total_value")).alias(currency_to.to_string()),
                 )
+                .group_by(["name", "country", "account_type"])
+                .agg([col(currency_to.to_string().as_str()).sum()])
                 .sort(
                     [currency_to.to_string()],
                     SortMultipleOptions::default().with_order_descending(true),
